@@ -1,0 +1,30 @@
+{
+    "name": "portedcheese/webflow-integration",
+    "description": "Load webflow template",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Vladimir Peshkov",
+            "email": "vladimirpeshkov5@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "paquettg/php-html-parser": "dev-master",
+        "portedcheese/seo-integration": "dev-master",
+        "chumper/zipper": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "PortedCheese\\WebflowIntegration\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "PortedCheese\\WebflowIntegration\\WebflowIntegrationServiceProvider"
+            ]
+        }
+    }
+}
