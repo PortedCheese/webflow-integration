@@ -18,12 +18,23 @@ class WebflowController extends Controller
         $this->fileManager = $fileManager;
     }
 
+    /**
+     * Главная страница.
+     *
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function index()
     {
-//        $this->fileManager->runParser();
+        $this->fileManager->runParser();
         return view('webflow-integration::admin.webflow.index');
     }
 
+    /**
+     * Загрузка архива.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function load(Request $request)
     {
         if (!$request->hasFile('file')) {
@@ -37,19 +48,11 @@ class WebflowController extends Controller
         $realPath = Storage::disk('public')->path($path);
         $this->fileManager->unzip($realPath);
         Storage::delete($path);
+        
         $this->fileManager->runParser();
+
         return redirect()
             ->back()
             ->with('success', 'Загружено');
-    }
-
-    public function parse()
-    {
-        $dom = new Dom();
-        $dom->loadFromFile(__DIR__ . '/index.html', [
-            'removeScripts' => false,
-            'removeStyles' => false,
-            'whitespaceTextNode' => false,
-        ]);
     }
 }

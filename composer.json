@@ -13,6 +13,7 @@
     "require": {
         "paquettg/php-html-parser": "dev-master",
         "portedcheese/seo-integration": "dev-master",
+        "portedcheese/base-settings": "dev-master",
         "chumper/zipper": "dev-master"
     },
     "autoload": {

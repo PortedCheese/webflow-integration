@@ -9,7 +9,12 @@ use Chumper\Zipper\Facades\Zipper;
 
 class FileManager
 {
+    // Куда будет распакован архив.
     const PATH = "webflow/unzipped";
+    // Куда будут сохранен главный шаблон.
+    const LAYOUT = "views/layouts/webflow";
+    // Куда будут падать шаблоны страниц.
+    const PAGES = "views/site/webflow";
 
     protected $htmlParserService;
 
@@ -18,8 +23,22 @@ class FileManager
         $this->htmlParserService = $htmlParserService;
         $this->public = Storage::disk('public');
         $this->webflow = Storage::disk('webflow');
+
+        // Если нет директории для главного шаблона, нужно создать.
+        if (! is_dir($directory = resource_path(self::LAYOUT))) {
+            mkdir($directory, 0755, true);
+        }
+        // Если нет директории для страниц, нужно создать.
+        if (! is_dir($directory = resource_path(self::PAGES))) {
+            mkdir($directory, 0755, true);
+        }
     }
 
+    /**
+     * Распаковать архив.
+     *
+     * @param $path
+     */
     public function unzip($path)
     {
         Zipper::make($path)->extractTo('storage/' . self::PATH);
@@ -32,13 +51,70 @@ class FileManager
      */
     public function runParser()
     {
-        $files = $this->public->files(self::PATH);
         $check = $this->checkFiles();
         if (!$check['success']) {
             return $check;
         }
-        $this->makeIndex();
-        $this->copyFolders();
+        $files = $this->public->files(self::PATH);
+        foreach ($files as $file) {
+            $name = str_replace(self::PATH . "/", '', $file);
+            if ($name == 'index.html') {
+//                $this->makeIndex($name);
+            }
+            else {
+                $this->makePage($name);
+//                break;
+            }
+        }
+//        $this->copyFolders();
+    }
+
+    /**
+     * Путь к файлу.
+     *
+     * @param $name
+     * @return string
+     */
+    private function getPublicFilePath($name)
+    {
+        return public_path('storage/' . self::PATH) . "/$name";
+    }
+
+    private function makePage($file)
+    {
+        $filePath = $this->getPublicFilePath($file);
+
+        $exploded = explode('.', $file);
+        if (count($exploded) == 2) {
+            $name = str_replace('_', '-', $exploded[0]);
+        }
+        else {
+            return;
+        }
+
+        // TODO: create model.
+        $model = (object) [];
+        $blade = $this->htmlParserService->parsePage($filePath, $model);
+
+        file_put_contents(
+            resource_path(self::PAGES . "/{$name}.blade.php"),
+            $blade
+        );
+    }
+
+    /**
+     * Создание файла index.
+     */
+    private function makeIndex($file)
+    {
+        $filePath = $this->getPublicFilePath($file);
+
+        $html = $this->htmlParserService->parseIndex($filePath);
+
+        file_put_contents(
+            resource_path(self::LAYOUT . "/index.blade.php"),
+            $html
+        );
     }
 
     /**
@@ -46,13 +122,17 @@ class FileManager
      */
     private function copyFolders()
     {
-        $publicDirectories = $this->public->directories(self::PATH);
-        $webflowDirectories = $this->webflow->directories();
+        // Фалы из архива.
+        $publicDirectories = $this->public
+            ->directories(self::PATH);
+        // Директории webflow.
+        $webflowDirectories = $this->webflow
+            ->directories();
         foreach ($publicDirectories as $directory) {
             $folder = str_replace(self::PATH . "/", '', $directory);
             $this->copyFiles($folder, $webflowDirectories);
         }
-        $this->public->deleteDirectory(self::PATH);
+//        $this->public->deleteDirectory(self::PATH);
     }
 
     /**
@@ -81,24 +161,6 @@ class FileManager
     }
 
     /**
-     * Создание файла index.
-     */
-    private function makeIndex()
-    {
-        $dom = new Dom();
-        $dom->loadFromFile(public_path('storage/' . self::PATH) . '/index.html', [
-            'strict' => false,
-            'cleanupInput' => false,
-            'removeScripts' => false,
-            'removeStyles' => false,
-            'whitespaceTextNode' => false,
-            'removeDoubleSpace' => false,
-        ]);
-
-        $this->htmlParserService->parseIndex($dom);
-    }
-
-    /**
      * Проверка файлов.
      *
      * @return array
@@ -106,7 +168,7 @@ class FileManager
     private function checkFiles()
     {
         // Проверка индекса.
-        $check = Storage::disk('public')
+        $check = $this->public
             ->exists(self::PATH . "/index.html");
         if (!$check) {
             return [

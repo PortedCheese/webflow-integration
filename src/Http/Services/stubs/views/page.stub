@@ -1,0 +1,5 @@
+@extends('layouts.boot')
+
+@section('content')
+{{html}}
+@endsection

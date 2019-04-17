@@ -6,28 +6,74 @@ use PHPHtmlParser\Dom;
 
 class HtmlParser
 {
+    /**
+     * Настройки парсера.
+     */
+    const CONFIG = [
+        'strict' => false,
+        'cleanupInput' => false,
+        'removeScripts' => false,
+        'removeStyles' => false,
+        'whitespaceTextNode' => false,
+        'removeDoubleSpace' => false,
+    ];
+
+    protected $dom;
+    protected $head;
+    protected $body;
+
     public function __construct()
     {
-        $this->dom = NULL;
+        $this->dom = new Dom();
         $this->head = NULL;
         $this->body = NULL;
     }
 
-    public function parseIndex($dom)
+    public function parsePage($filePath, $model)
     {
-        $this->dom = $dom;
+        $this->dom->loadFromFile($filePath, self::CONFIG);
+        $this->extendPageBody();
+        $html = $this->body->outerHtml;
+        $blade = str_replace(
+            '{{html}}',
+            $html,
+            file_get_contents(__DIR__.'/stubs/views/page.stub')
+        );
+        return $blade;
+    }
 
-        $this->extendHead();
+    /**
+     * Разобрать индексную старницу.
+     * @param $dom
+     */
+    public function parseIndex($filePath)
+    {
+        $this->dom->loadFromFile($filePath, self::CONFIG);
 
-        $this->extendBody();
+        $this->extendIndexHead();
 
-        $this->saveIndexFile();
+        $this->extendIndexBody();
+
+        $html = $this->dom->outerHtml;
+        $html = "<!DOCTYPE html>" . $html;
+        return $html;
+    }
+
+    private function extendPageBody()
+    {
+        $body = $this->dom->find('body');
+        $this->body = $body->find("[main-section='main-section]")[0];
+        if (empty($this->body)) {
+            return;
+        }
+        $this->changeImages();
+        $this->deleteIncludes();
     }
 
     /**
      * Меняем head.
      */
-    private function extendHead()
+    private function extendIndexHead()
     {
         $this->head = $this->dom->find('head');
         $this->chageStyles();
@@ -46,6 +92,7 @@ class HtmlParser
         // Обойти все мета.
         $metas = $this->head->find("meta");
         $main = true;
+        // Когда обрабатываем индекс, нам не нужны никакие мета из тех что там есть.
         foreach ($metas as $meta) {
             if ($main) {
                 $this->head->insertBefore($metaDefault, $meta->id());
@@ -53,7 +100,7 @@ class HtmlParser
             }
             $meta->delete();
         }
-        // Удаляем заголовок.
+        // Удаляем заголовок, в шаблоне он есть нормальный.
         $title = $this->head->find("title");
         foreach ($title as $item) {
             $item->delete();
@@ -103,12 +150,43 @@ class HtmlParser
     /**
      * Меняем body.
      */
-    private function extendBody()
+    private function extendIndexBody()
     {
         $this->body = $this->dom->find('body');
         $this->changeContent();
         $this->changeImages();
         $this->changeJs();
+    }
+
+    /**
+     * Расширяем контент.
+     */
+    private function changeContent()
+    {
+        // Удаляем все что есть в main-section.
+        $mainSection = $this->body->find("[main-section='main-section]")[0];
+        if (empty($mainSection)) {
+            return;
+        }
+        foreach ($mainSection->find('*') as $item) {
+            $item->delete();
+        }
+        // Добавляем секцию.
+        $content = new Dom();
+        $content->loadStr("@yield('content')");
+        $mainSection->addChild($content->root);
+        $this->deleteIncludes();
+    }
+
+    /**
+     * Расширения для гиса.
+     */
+    private function deleteIncludes()
+    {
+        $embed = $this->body->find(".w-embed");
+        foreach ($embed as $item) {
+            $item->delete();
+        }
     }
 
     /**
@@ -128,6 +206,9 @@ class HtmlParser
         }
     }
 
+    /**
+     * Заменить js.
+     */
     private function changeJs()
     {
         // Создаем новый элемент для подключения js.
@@ -140,7 +221,7 @@ class HtmlParser
         $i = 0;
         $main = true;
         foreach ($scripts as $item) {
-            // До первого стиля добавляем свой стиль.
+            // До первого стиля добавляем свой скрипт.
             if ($main) {
                 $this->body->insertBefore($script, $item->id());
                 $main = false;
@@ -163,41 +244,5 @@ class HtmlParser
                 $this->head->insertAfter($content->root, $item->id());
             }
         }
-    }
-
-    /**
-     * Расширяем контент.
-     */
-    private function changeContent()
-    {
-        // Удаляем все что есть в main-section.
-        $mainSection = $this->body->find("[main-section='main-section]")[0];
-        foreach ($mainSection->find('*') as $item) {
-            $item->delete();
-        }
-        // Добавляем секцию.
-        $content = new Dom();
-        $content->loadStr("@yield('content')");
-        $mainSection->addChild($content->root);
-        // Расширения.
-        $embed = $this->body->find(".w-embed");
-        foreach ($embed as $item) {
-            $item->delete();
-        }
-    }
-
-    /**
-     * Сохраняем файл.
-     * @param $html
-     */
-    private function saveIndexFile()
-    {
-        $html = $this->dom->outerHtml;
-        $html = "<!DOCTYPE html>" . $html;
-//        $pattern = "/{{(#|\/)(.*?)}}/";
-//        $html = preg_replace($pattern, '', $html);
-        $file = fopen(base_path("resources/views/webflow/index.blade.php"), 'w');
-        fwrite($file, $html);
-        fclose($file);
     }
 }
