@@ -3,9 +3,11 @@
 namespace PortedCheese\WebflowIntegration\Http\Services;
 
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use PHPHtmlParser\Dom;
 use Chumper\Zipper\Facades\Zipper;
+use PortedCheese\WebflowIntegration\Models\WebflowPage;
 
 class FileManager
 {
@@ -35,6 +37,22 @@ class FileManager
     }
 
     /**
+     * Удалить страницу.
+     *
+     * @param $name
+     */
+    public static function deletePage($name)
+    {
+        try {
+            $path = resource_path(self::PAGES . "/{$name}.blade.php");
+            unlink($path);
+        }
+        catch (\Exception $e) {
+            Log::error("Can't delete file {$name}.blade.php");
+        }
+    }
+
+    /**
      * Распаковать архив.
      *
      * @param $path
@@ -56,17 +74,24 @@ class FileManager
             return $check;
         }
         $files = $this->public->files(self::PATH);
+        $pageNames = [];
         foreach ($files as $file) {
             $name = str_replace(self::PATH . "/", '', $file);
             if ($name == 'index.html') {
-//                $this->makeIndex($name);
+                $this->makeIndex($name);
             }
             else {
-                $this->makePage($name);
-//                break;
+                $pageNames[] = $this->makePage($name);
             }
         }
-//        $this->copyFolders();
+        // Удаляем лишние станицы.
+        $filtered = WebflowPage::whereNotIn('slug', $pageNames);
+        $collection = $filtered->get();
+        foreach ($collection as $item) {
+            $item->delete();
+        }
+        // Копируем файлы и чистим содержимое архива.
+        $this->copyFolders();
     }
 
     /**
@@ -80,6 +105,11 @@ class FileManager
         return public_path('storage/' . self::PATH) . "/$name";
     }
 
+    /**
+     * Создать страницу.
+     *
+     * @param $file
+     */
     private function makePage($file)
     {
         $filePath = $this->getPublicFilePath($file);
@@ -92,14 +122,31 @@ class FileManager
             return;
         }
 
-        // TODO: create model.
-        $model = (object) [];
+        $model = $this->getModel($name);
         $blade = $this->htmlParserService->parsePage($filePath, $model);
 
         file_put_contents(
             resource_path(self::PAGES . "/{$name}.blade.php"),
             $blade
         );
+        return $name;
+    }
+
+    /**
+     * Загрузить или создать старницу.
+     *
+     * @param $slug
+     * @return mixed
+     */
+    private function getModel($slug)
+    {
+        try {
+            $model = WebflowPage::where('slug', $slug)->firstOrFail();
+        }
+        catch (\Exception $e) {
+            $model = WebflowPage::create(['slug' => $slug]);
+        }
+        return $model;
     }
 
     /**
@@ -132,7 +179,7 @@ class FileManager
             $folder = str_replace(self::PATH . "/", '', $directory);
             $this->copyFiles($folder, $webflowDirectories);
         }
-//        $this->public->deleteDirectory(self::PATH);
+        $this->public->deleteDirectory(self::PATH);
     }
 
     /**

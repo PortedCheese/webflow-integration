@@ -1,8 +1,16 @@
 # WebFlow integration
 
-Нужно добавить диск
+Что бы сделать вывод главной, можно в контроллер главной страницы дописать:
 
-`'webflow' => [
-    'driver' => 'local',
-    'root' => public_path('webflow'),
-],`
+`
+if (class_exists(WebflowPage::class)) {
+    $page = WebflowPage::getHomePage();
+    if (!empty($page)) {
+        return $page;
+    }
+}
+`
+
+Меню для админки
+
+`@includeIf("webflow-integration::admin.webflow.menu")`

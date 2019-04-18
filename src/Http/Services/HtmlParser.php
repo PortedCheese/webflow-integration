@@ -3,6 +3,7 @@
 namespace PortedCheese\WebflowIntegration\Http\Services;
 
 use PHPHtmlParser\Dom;
+use PortedCheese\SeoIntegration\Models\Meta;
 
 class HtmlParser
 {
@@ -18,6 +19,20 @@ class HtmlParser
         'removeDoubleSpace' => false,
     ];
 
+    /**
+     * Теги которые не нужны.
+     */
+    const NOMETA = [
+        'names' => [
+            'charset',
+            'property',
+        ],
+        'nameValue' => [
+            'viewport',
+            'generator',
+        ],
+    ];
+
     protected $dom;
     protected $head;
     protected $body;
@@ -29,11 +44,22 @@ class HtmlParser
         $this->body = NULL;
     }
 
+    /**
+     * Разобрать дополнительную страницу.
+     *
+     * @param $filePath
+     * @param $model
+     * @return mixed
+     */
     public function parsePage($filePath, $model)
     {
         $this->dom->loadFromFile($filePath, self::CONFIG);
+        $this->pageMetas($model);
         $this->extendPageBody();
-        $html = $this->body->outerHtml;
+        $html = "Не найден элемент main-section";
+        if (!empty($this->body)) {
+            $html = $this->body->outerHtml;
+        }
         $blade = str_replace(
             '{{html}}',
             $html,
@@ -59,6 +85,95 @@ class HtmlParser
         return $html;
     }
 
+    /**
+     * Теги для страницы.
+     *
+     * @param $page
+     */
+    private function pageMetas($page)
+    {
+        if ($page->metas->count()) {
+            return;
+        }
+        $this->head = $this->dom->find('head');
+        $this->createTitleMeta($page);
+        // Обойти все мета.
+        $metas = $this->head->find("meta");
+        foreach ($metas as $meta) {
+            $tag = $meta->getTag();
+            $attributes = $tag->getAttributes();
+            $noMeta = false;
+            foreach ($attributes as $key => $value) {
+                if (in_array($key, self::NOMETA['names'])) {
+                    $noMeta = true;
+                    break;
+                }
+                if ($key == 'name' && !empty($value['value'])) {
+                    if (in_array($value['value'], self::NOMETA['nameValue'])) {
+                        $noMeta = true;
+                        break;
+                    }
+                }
+            }
+            if ($noMeta) {
+                continue;
+            }
+            $this->createOtherMeta($page, $attributes);
+        }
+    }
+
+    /**
+     * Создать тег.
+     *
+     * @param $page
+     * @param $attributes
+     */
+    private function createOtherMeta($page, $attributes)
+    {
+        if (
+            empty($attributes['name']) ||
+            empty($attributes['content'])
+        ) {
+            return;
+        }
+        $data = [
+            'name' => $attributes['name']['value'],
+            'content' => $attributes['content']['value'],
+        ];
+        $result = Meta::getModel('webflow_pages', $page->id, $data['name']);
+        if (!$result['success']) {
+            return;
+        }
+        $meta = Meta::create($data);
+        $meta->metable()->associate($page);
+        $meta->save();
+    }
+
+    /**
+     * Создать тег заголовка.
+     */
+    private function createTitleMeta($page)
+    {
+        $title = $this->head->find('title')[0];
+        if (empty($title)) {
+            return;
+        }
+        $tag = $title->getTag();
+        $result = Meta::getModel('webflow_pages', $page->id, "title");
+        if (!$result['success']) {
+            return;
+        }
+        $meta = Meta::create([
+            'name' => 'title',
+            'content' => $title->innerHtml,
+        ]);
+        $meta->metable()->associate($page);
+        $meta->save();
+    }
+
+    /**
+     * Меняем страницу.
+     */
     private function extendPageBody()
     {
         $body = $this->dom->find('body');
