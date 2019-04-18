@@ -156,11 +156,29 @@ class FileManager
     {
         $filePath = $this->getPublicFilePath($file);
 
-        $html = $this->htmlParserService->parseIndex($filePath);
+        list($html, $menu) = $this->htmlParserService->parseIndex($filePath);
 
         file_put_contents(
             resource_path(self::LAYOUT . "/index.blade.php"),
             $html
+        );
+
+        file_put_contents(
+            resource_path(self::LAYOUT . "/menu.blade.php"),
+            str_replace(
+                '{{links}}',
+                $menu['links'],
+                file_get_contents(__DIR__ . '/stubs/views/menu.stub')
+            )
+        );
+
+        file_put_contents(
+            resource_path(self::LAYOUT . "/link.blade.php"),
+            str_replace(
+                ['{{cover}}', '{{button}}', '{{nav}}', '{{navLink}}'],
+                [$menu['cover'], $menu['button'], $menu['nav'], $menu['navLink']],
+                file_get_contents(__DIR__ . "/stubs/views/link.stub")
+            )
         );
     }
 

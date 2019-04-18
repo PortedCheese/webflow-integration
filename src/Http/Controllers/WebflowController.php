@@ -4,6 +4,7 @@ namespace PortedCheese\WebflowIntegration\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -53,6 +54,34 @@ class WebflowController extends Controller
     {
 //        $this->fileManager->runParser();
         return view('webflow-integration::admin.webflow.index');
+    }
+
+    /**
+     * Загрузка архива.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function load(WebflowLoadRequest $request)
+    {
+        if (!$request->hasFile('file')) {
+            return redirect()
+                ->back()
+                ->with('danger', 'Файл не найден');
+        }
+        $path = $request
+            ->file('file')
+            ->store("webflow");
+
+        $realPath = Storage::disk('public')->path($path);
+        $this->fileManager->unzip($realPath);
+        Storage::delete($path);
+
+        $this->fileManager->runParser();
+
+        return redirect()
+            ->back()
+            ->with('success', 'Загружено');
     }
 
     /**
@@ -114,32 +143,5 @@ class WebflowController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Обновленно');
-    }
-
-    /**
-     * Загрузка архива.
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function load(WebflowLoadRequest $request)
-    {
-        if (!$request->hasFile('file')) {
-            return redirect()
-                ->back()
-                ->with('danger', 'Файл не найден');
-        }
-        $path = $request
-            ->file('file')
-            ->store("webflow");
-        $realPath = Storage::disk('public')->path($path);
-        $this->fileManager->unzip($realPath);
-        Storage::delete($path);
-        
-        $this->fileManager->runParser();
-
-        return redirect()
-            ->back()
-            ->with('success', 'Загружено');
     }
 }

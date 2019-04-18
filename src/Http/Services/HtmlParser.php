@@ -36,12 +36,14 @@ class HtmlParser
     protected $dom;
     protected $head;
     protected $body;
+    protected $menu;
 
     public function __construct()
     {
         $this->dom = new Dom();
         $this->head = NULL;
         $this->body = NULL;
+        $this->menu = [];
     }
 
     /**
@@ -82,7 +84,7 @@ class HtmlParser
 
         $html = $this->dom->outerHtml;
         $html = "<!DOCTYPE html>" . $html;
-        return $html;
+        return [$html, $this->menu];
     }
 
     /**
@@ -268,9 +270,92 @@ class HtmlParser
     private function extendIndexBody()
     {
         $this->body = $this->dom->find('body');
+        $this->changeMenu();
         $this->changeContent();
         $this->changeImages();
         $this->changeJs();
+    }
+
+    private function changeMenu()
+    {
+        $navSection = $this->body->find("nav")[0];
+        if (empty($navSection)) {
+            return;
+        }
+        $linkClasses = [];
+        $dropClasses = [];
+        foreach ($navSection->find('*') as $item) {
+            $tag = $item->getTag();
+            $name = $tag->name();
+            if ($name == 'a') {
+                $this->findLinkClasses($tag, $linkClasses);
+            }
+            else {
+                $this->findDropdownClasses($item, $dropClasses);
+            }
+            $item->delete();
+        }
+        $dropClasses['links'] = implode(" ", $linkClasses);
+
+        // Добавляем секцию.
+        $content = new Dom();
+        $content->loadStr("@includeIf('layouts.webflow.menu')");
+        $navSection->addChild($content->root);
+        $this->menu = $dropClasses;
+    }
+
+    private function findDropdownClasses($item, &$dropClasses)
+    {
+        $tag = $item->getTag();
+        $classes = $tag->getAttribute('class');
+        if (empty($classes['value'])) {
+            return;
+        }
+        $dropClasses['cover'] = $classes['value'];
+        $children = $item->find("*");
+        foreach ($children as $child) {
+            $tag = $child->getTag();
+            $classes = $tag->getAttribute('class');
+            if (empty($classes['value'])) {
+                continue;
+            }
+            if ($tag->name() == 'div') {
+                $dropClasses['button'] = $classes['value'];
+                // TODO: icon, text.
+            }
+            else {
+                $dropClasses['nav'] = $classes['value'];
+                $linkClasses = [];
+                foreach ($child->find("*") as $item) {
+                    $childTag = $item->getTag();
+                    if ($childTag->name() == 'a') {
+                        $this->findLinkClasses($childTag, $linkClasses);
+                    }
+                }
+                $dropClasses['navLink'] = implode(" ", $linkClasses);
+            }
+        }
+    }
+
+    /**
+     * Класс для ссылки.
+     *
+     * @param $classes
+     * @param $linkClasses
+     */
+    private function findLinkClasses($tag, &$linkClasses)
+    {
+        $classes = $tag->getAttribute('class');
+        if (empty($classes['value'])) {
+            return;
+        }
+        $classes = $classes['value'];
+        $exploded = explode(" ", $classes);
+        if (empty($linkClasses)) {
+            $linkClasses = $exploded;
+            return;
+        }
+        $linkClasses = array_intersect($linkClasses, $exploded);
     }
 
     /**

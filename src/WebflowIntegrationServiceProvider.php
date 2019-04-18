@@ -2,7 +2,9 @@
 
 namespace PortedCheese\WebflowIntegration;
 
+use App\Menu;
 use Illuminate\Support\ServiceProvider;
+use PortedCheese\WebflowIntegration\Console\Commands\WebflowParseCommand;
 
 class WebflowIntegrationServiceProvider extends ServiceProvider
 {
@@ -33,6 +35,21 @@ class WebflowIntegrationServiceProvider extends ServiceProvider
         $theme = app()->config['theme.themes'];
         $theme['webflow'] = 'webflow.index';
         app()->config['theme.themes'] = $theme;
+
+        // Console.
+        $this->commands([
+            WebflowParseCommand::class,
+        ]);
+
+        // Ljбавить меню.
+        view()->composer('layouts.webflow.index', function ($view) {
+            if (class_exists('\App\Menu')) {
+                $view->with('webflowMenu', Menu::getByKey('main'));
+            }
+            else {
+                $view->with('webflowMenu', []);
+            }
+        });
     }
 
     public function register()

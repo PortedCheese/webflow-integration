@@ -1,0 +1,21 @@
+@if ($item->children)
+    <div class="{{cover}}" data-delay="0" style="z-index: 901;">
+        <div class="{{button}}">
+            <div class="w-icon-dropdown-toggle"></div>
+            <div>{{ $item->title }}</div>
+        </div>
+        <nav class="{{nav}}">
+            @foreach($item->children as $child)
+                @includeIf('layouts.webflow.link', ['item' => $child, 'class' => "{{navLink}}"])
+            @endforeach
+        </nav>
+    </div>
+@else
+    <a class="{{ $class }}"
+       @if ($item->target)
+           target="{{ $item->target }}"
+       @endif
+       href="{{ $item->url }}">
+        {{ $item->title }}
+    </a>
+@endif

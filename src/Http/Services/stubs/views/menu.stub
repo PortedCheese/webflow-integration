@@ -1,0 +1,17 @@
+@isset($webflowMenu)
+    @foreach($webflowMenu as $item)
+        @php
+            $class = "{{links}}";
+            $class .= $currentRoute == $item->route ? ' cur' : '';
+        @endphp
+        @if ($role = $item->middleware)
+            @role($role)
+                @if ($item->url)
+                    @include('layouts.webflow.link', ['item' => $item, 'class' => $class])
+                @endif
+            @endrole
+        @elseif ($item->url)
+            @include('layouts.webflow.link', ['item' => $item, 'class' => $class])
+        @endif
+    @endforeach
+@endisset
