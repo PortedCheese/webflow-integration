@@ -41,7 +41,7 @@ class WebflowIntegrationServiceProvider extends ServiceProvider
             WebflowParseCommand::class,
         ]);
 
-        // Ljбавить меню.
+        // Добавить меню.
         view()->composer('layouts.webflow.index', function ($view) {
             if (class_exists('\App\Menu')) {
                 $view->with('webflowMenu', Menu::getByKey('main'));

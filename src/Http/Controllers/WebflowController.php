@@ -52,7 +52,7 @@ class WebflowController extends Controller
      */
     public function index()
     {
-//        $this->fileManager->runParser();
+        $this->fileManager->runParser(true);
         return view('webflow-integration::admin.webflow.index');
     }
 
@@ -77,7 +77,7 @@ class WebflowController extends Controller
         $this->fileManager->unzip($realPath);
         Storage::delete($path);
 
-        $this->fileManager->runParser();
+//        $this->fileManager->runParser();
 
         return redirect()
             ->back()

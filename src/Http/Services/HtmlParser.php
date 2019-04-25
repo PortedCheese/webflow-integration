@@ -83,7 +83,12 @@ class HtmlParser
         $this->extendIndexBody();
 
         $html = $this->dom->outerHtml;
-        $html = "<!DOCTYPE html>" . $html;
+        // Окружить body #app для JueJs.
+        $html = str_replace(
+            ["<body>", "VueJsReplace"],
+            ["<body><div id='app'>", "</div>"],
+            $html
+        );
         return [$html, $this->menu];
     }
 
@@ -229,10 +234,6 @@ class HtmlParser
      */
     private function chageStyles()
     {
-        // Создаем новый элемент для подключения стилей.
-        $element = new Dom();
-        $element->loadStr('<link href="{{ asset(\'css/app.css\') }}" rel="stylesheet">');
-        $link = $element->root;
         // Обходим все стили которые есть.
         $styles = $this->head->find("link[rel='stylesheet']");
         $last = count($styles);
@@ -241,7 +242,10 @@ class HtmlParser
         foreach ($styles as $item) {
             // До первого стиля добавляем свой стиль.
             if ($main) {
-                $this->head->insertBefore($link, $item->id());
+                // Создаем новый элемент для подключения стилей.
+                $element = new Dom();
+                $element->loadStr('<link href="{{ asset(\'css/app.css\') }}" rel="stylesheet">');
+                $this->head->insertBefore($element->root, $item->id());
                 $main = false;
             }
             // Меняем местоположение стиля.
@@ -276,12 +280,48 @@ class HtmlParser
         $this->changeJs();
     }
 
+    /**
+     * Меню сайта.
+     */
     private function changeMenu()
     {
-        $navSection = $this->body->find("nav")[0];
+        $navSection = $this->body->find("[navigation-menu='navigation-menu']")[0];
         if (empty($navSection)) {
             return;
         }
+        $tag = $navSection->getTag();
+        $attributes = $tag->getAttributes();
+        if (!empty($attributes['no-bootstrap'])) {
+            $this->noBootstrap($navSection);
+        }
+        else {
+            $theme = !empty($attributes['theme']) ? $attributes['theme'] : "dark";
+            $expand = !empty($attributes['expand']) ? $attributes['expand'] : "lg";
+            $side = !empty($attributes['side']) ? $attributes['side'] : 'l';
+            $tag->setAttribute('class', "navbar navbar-expand-{$expand} navbar-{$theme}");
+            foreach ($navSection->find("*") as $item) {
+                $item->delete();
+            }
+            // Добавляем секцию.
+            $content = new Dom();
+            $content->loadStr("@include('webflow-integration::layouts.webflow.menu-default', [
+                'side' => '{$side}'
+            ])");
+            $navSection->addChild($content->root);
+            $button = $this->body->find('.w-nav-button')[0];
+            if (!empty($button)) {
+                $button->delete();
+            }
+        }
+    }
+
+    /**
+     * Если меню без бутстрапа.
+     *
+     * @param $navsection
+     */
+    private function noBootstrap($navsection)
+    {
         $linkClasses = [];
         $dropClasses = [];
         foreach ($navSection->find('*') as $item) {
@@ -304,6 +344,12 @@ class HtmlParser
         $this->menu = $dropClasses;
     }
 
+    /**
+     * Классы для выпадающего меню.
+     *
+     * @param $item
+     * @param $dropClasses
+     */
     private function findDropdownClasses($item, &$dropClasses)
     {
         $tag = $item->getTag();
@@ -397,11 +443,11 @@ class HtmlParser
         $images = $this->body->find("img[src*='images\/']");
         foreach ($images as $image) {
             $value = $image->getAttribute('src');
-            $value = str_replace("images/", "webflow/images/", $value);
+            $value = str_replace("images/", "/webflow/images/", $value);
             $image->getTag()->setAttribute('src', $value);
 
             $value = $image->getAttribute('srcset');
-            $value = str_replace("images/", "webflow/images/", $value);
+            $value = str_replace("images/", "/webflow/images/", $value);
             $image->getTag()->setAttribute('srcset', $value);
         }
     }
@@ -411,21 +457,31 @@ class HtmlParser
      */
     private function changeJs()
     {
-        // Создаем новый элемент для подключения js.
-        $element = new Dom();
-        $element->loadStr('<script src="{{ asset(\'js/app.js\') }}" defer></script>');
-        $script = $element->root;
         // Обходим все js которые есть.
         $scripts = $this->body->find("script[type='text/javascript']");
-        $last = count($scripts);
-        $i = 0;
-        $main = true;
+
+        $content = new Dom();
+        $content->loadStr("VueJsReplace");
+        $vue = $content->root;
+        if (empty($scripts)) {
+            $this->body->addChild($vue);
+        }
+        else {
+            $this->body->insertBefore($vue, $scripts[0]->id());
+        }
+
+        // Js по умолчанию.
+        $content = new Dom();
+        $content->loadStr("@include('webflow-integration::layouts.webflow.js-default')");
+        $jsDefault = $content->root;
+        if (!empty($scripts)) {
+            $this->body->insertAfter($jsDefault, $vue->id());
+        }
+        else {
+            $this->body->addChild($jsDefault);
+        }
+
         foreach ($scripts as $item) {
-            // До первого стиля добавляем свой скрипт.
-            if ($main) {
-                $this->body->insertBefore($script, $item->id());
-                $main = false;
-            }
             // Меняем местоположение стиля.
             $tag = $item->getTag();
             $value = $tag->getAttribute('src')['value'];
@@ -437,12 +493,6 @@ class HtmlParser
                 $tag->setAttribute('src', "{{ asset('webflow/{$value}') }}");
             }
             $css = $value;
-            // Для последнего добавляем доп. стили.
-            if (++$i === $last) {
-                $content = new Dom();
-                $content->loadStr("@stack('more-js')");
-                $this->head->insertAfter($content->root, $item->id());
-            }
         }
     }
 }

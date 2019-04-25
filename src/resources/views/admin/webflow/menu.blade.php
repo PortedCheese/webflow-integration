@@ -9,11 +9,11 @@
         Webflow
     </a>
     <div class="dropdown-menu" aria-labelledby="user-dropdown">
-        <a href="{{ route('admin.webflow.list') }}"
+        <a href="{{ route('admin.webflow.index') }}"
            class="dropdown-item">
             Список
         </a>
-        <a href="{{ route('admin.webflow.index') }}"
+        <a href="{{ route('admin.webflow.download') }}"
            class="dropdown-item">
             Загрузить
         </a>

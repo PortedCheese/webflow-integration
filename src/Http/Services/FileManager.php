@@ -19,6 +19,9 @@ class FileManager
     const PAGES = "views/site/webflow";
 
     protected $htmlParserService;
+    protected $public;
+    protected $webflow;
+    protected $debug;
 
     public function __construct(HtmlParser $htmlParserService)
     {
@@ -34,6 +37,8 @@ class FileManager
         if (! is_dir($directory = resource_path(self::PAGES))) {
             mkdir($directory, 0755, true);
         }
+
+        $this->debug = false;
     }
 
     /**
@@ -67,8 +72,9 @@ class FileManager
      *
      * @return array
      */
-    public function runParser()
+    public function runParser($debug = FALSE)
     {
+        $this->debug = $debug;
         $check = $this->checkFiles();
         if (!$check['success']) {
             return $check;
@@ -163,23 +169,25 @@ class FileManager
             $html
         );
 
-        file_put_contents(
-            resource_path(self::LAYOUT . "/menu.blade.php"),
-            str_replace(
-                '{{links}}',
-                $menu['links'],
-                file_get_contents(__DIR__ . '/stubs/views/menu.stub')
-            )
-        );
+        if (!empty($menu)) {
+            file_put_contents(
+                resource_path(self::LAYOUT . "/menu.blade.php"),
+                str_replace(
+                    '{{links}}',
+                    $menu['links'],
+                    file_get_contents(__DIR__ . '/stubs/views/menu.stub')
+                )
+            );
 
-        file_put_contents(
-            resource_path(self::LAYOUT . "/link.blade.php"),
-            str_replace(
-                ['{{cover}}', '{{button}}', '{{nav}}', '{{navLink}}'],
-                [$menu['cover'], $menu['button'], $menu['nav'], $menu['navLink']],
-                file_get_contents(__DIR__ . "/stubs/views/link.stub")
-            )
-        );
+            file_put_contents(
+                resource_path(self::LAYOUT . "/link.blade.php"),
+                str_replace(
+                    ['{{cover}}', '{{button}}', '{{nav}}', '{{navLink}}'],
+                    [$menu['cover'], $menu['button'], $menu['nav'], $menu['navLink']],
+                    file_get_contents(__DIR__ . "/stubs/views/link.stub")
+                )
+            );
+        }
     }
 
     /**
@@ -197,7 +205,9 @@ class FileManager
             $folder = str_replace(self::PATH . "/", '', $directory);
             $this->copyFiles($folder, $webflowDirectories);
         }
-        $this->public->deleteDirectory(self::PATH);
+        if (!$this->debug) {
+            $this->public->deleteDirectory(self::PATH);
+        }
     }
 
     /**

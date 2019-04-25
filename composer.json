@@ -12,9 +12,6 @@
     "minimum-stability": "dev",
     "require": {
         "paquettg/php-html-parser": "dev-master",
-        "portedcheese/seo-integration": "dev-master",
-        "portedcheese/base-settings": "dev-master",
-        "portedcheese/admin-site-menu": "dev-master",
         "chumper/zipper": "dev-master"
     },
     "autoload": {

@@ -6,18 +6,20 @@ Route::group([
     'namespace' => 'PortedCheese\WebflowIntegration\Http\Controllers',
     'as' => 'admin.webflow.',
 ], function () {
-    Route::get('/', "WebflowController@index")
-        ->name('index');
-    Route::post('/', "WebflowController@load")
+    Route::get('/download', "WebflowController@index")
+        ->name('download');
+    Route::post('/download', "WebflowController@load")
         ->name('load');
-    Route::get('/list', "WebflowController@list")
-        ->name('list');
+
+    Route::get('/', "WebflowController@list")
+        ->name('index');
+    Route::get('/{page}', "WebflowController@show")
+        ->name('show');
+
     Route::post('/set/{page}', "WebflowController@setHome")
         ->name('set-home');
     Route::post('/unset/{page}', "WebflowController@unsetHome")
         ->name('unset-home');
-    Route::get('/{page}', "WebflowController@show")
-        ->name('show');
 });
 
 Route::group([
