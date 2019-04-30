@@ -28,7 +28,12 @@ Route::group([
     'as' => 'webflow.page.',
 ], function () {
     $pages = Cache::remember('webflow-pages', 5, function() {
-        return \PortedCheese\WebflowIntegration\Models\WebflowPage::all();
+        if (Schema::hasTable('webflow_pages')) {
+            return \PortedCheese\WebflowIntegration\Models\WebflowPage::all();
+        }
+        else {
+            return [];
+        }
     });
     if (!empty($pages)) {
         foreach ($pages as $page) {
