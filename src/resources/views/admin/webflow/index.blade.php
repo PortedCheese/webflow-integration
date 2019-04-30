@@ -1,28 +1,35 @@
 @extends('admin.layout')
 
-@section('page-title', 'Webflow - ')
-@section('header-title', 'Webflow')
+@section('page-title', 'Загрузка шаблона WebFlow - ')
+@section('header-title', 'Загрузка шаблона WebFlow')
 
 @section('admin')
-    <div class="col-4">
+    <div class="col-12">
         <form action="{{ route('admin.webflow.load') }}"
               enctype="multipart/form-data"
               method="post">
             @csrf
-            <div class="form-group">
-                <label for="file">Файл</label>
+
+            <div class="custom-file">
                 <input type="file"
-                       class="form-control-file{{ $errors->has('file') ? ' is-invalid' : '' }}"
-                       id="file"
-                       name="file">
+                       class="custom-file-input{{ $errors->has('file') ? ' is-invalid' : '' }}"
+                       id="custom-file-input"
+                       lang="ru"
+                       name="file"
+                       aria-describedby="inputGroupWebflow">
+                <label class="custom-file-label"
+                       for="custom-file-input">
+                    Выберите файл архива
+                </label>
                 @if ($errors->has('file'))
-                    <span class="invalid-feedback" role="alert">
+                    <div class="invalid-feedback">
                         <strong>{{ $errors->first('file') }}</strong>
-                    </span>
+                    </div>
                 @endif
             </div>
 
-            <div class="btn-group" role="group">
+
+            <div class="btn-group mt-2" role="group">
                 <button type="submit" class="btn btn-success">
                     Загрузить
                 </button>

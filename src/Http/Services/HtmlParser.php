@@ -22,7 +22,7 @@ class HtmlParser
     /**
      * Теги которые не нужны.
      */
-    const NOMETA = [
+    const NO_META = [
         'names' => [
             'charset',
             'property',
@@ -72,7 +72,9 @@ class HtmlParser
 
     /**
      * Разобрать индексную старницу.
-     * @param $dom
+     *
+     * @param $filePath
+     * @return array
      */
     public function parseIndex($filePath)
     {
@@ -83,7 +85,7 @@ class HtmlParser
         $this->extendIndexBody();
 
         $html = $this->dom->outerHtml;
-        // Окружить body #app для JueJs.
+        // Окружить body #app для VueJs.
         $html = str_replace(
             ["<body>", "VueJsReplace"],
             ["<body><div id='app'>", "</div>"],
@@ -111,12 +113,12 @@ class HtmlParser
             $attributes = $tag->getAttributes();
             $noMeta = false;
             foreach ($attributes as $key => $value) {
-                if (in_array($key, self::NOMETA['names'])) {
+                if (in_array($key, self::NO_META['names'])) {
                     $noMeta = true;
                     break;
                 }
                 if ($key == 'name' && !empty($value['value'])) {
-                    if (in_array($value['value'], self::NOMETA['nameValue'])) {
+                    if (in_array($value['value'], self::NO_META['nameValue'])) {
                         $noMeta = true;
                         break;
                     }
@@ -198,7 +200,7 @@ class HtmlParser
     private function extendIndexHead()
     {
         $this->head = $this->dom->find('head');
-        $this->chageStyles();
+        $this->changeStyles();
         $this->changeMeta();
     }
 
@@ -232,7 +234,7 @@ class HtmlParser
     /**
      * Переделываем стили.
      */
-    private function chageStyles()
+    private function changeStyles()
     {
         // Обходим все стили которые есть.
         $styles = $this->head->find("link[rel='stylesheet']");
@@ -242,13 +244,13 @@ class HtmlParser
         foreach ($styles as $item) {
             // До первого стиля добавляем свой стиль.
             if ($main) {
-                // Создаем новый элемент для подключения стилей.
+                // CSS по умолчанию.
                 $element = new Dom();
-                $element->loadStr('<link href="{{ asset(\'css/app.css\') }}" rel="stylesheet">');
+                $element->loadStr("@include('webflow-integration::layouts.webflow.css-default')");
                 $this->head->insertBefore($element->root, $item->id());
                 $main = false;
             }
-            // Меняем местоположение стиля.
+            // Меняем местоположение стиля (путь на сервере).
             $tag = $item->getTag();
             $value = $tag->getAttribute('href')['value'];
             // если это не сторонний стиль.
@@ -258,7 +260,6 @@ class HtmlParser
             ) {
                 $tag->setAttribute('href', "{{ asset('webflow/{$value}') }}");
             }
-            $css = $value;
             // Для последнего добавляем доп. стили.
             if (++$i === $last) {
                 $content = new Dom();
@@ -318,9 +319,9 @@ class HtmlParser
     /**
      * Если меню без бутстрапа.
      *
-     * @param $navsection
+     * @param $navSection
      */
-    private function noBootstrap($navsection)
+    private function noBootstrap($navSection)
     {
         $linkClasses = [];
         $dropClasses = [];
@@ -460,6 +461,7 @@ class HtmlParser
         // Обходим все js которые есть.
         $scripts = $this->body->find("script[type='text/javascript']");
 
+        // Добавляем фразу что бы потом заменить ее на закрывающий div.
         $content = new Dom();
         $content->loadStr("VueJsReplace");
         $vue = $content->root;
@@ -492,7 +494,6 @@ class HtmlParser
             ) {
                 $tag->setAttribute('src', "{{ asset('webflow/{$value}') }}");
             }
-            $css = $value;
         }
     }
 }

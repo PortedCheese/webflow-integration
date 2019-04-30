@@ -70,6 +70,7 @@ class FileManager
     /**
      * Запускаем парсер архива.
      *
+     * @param bool $debug
      * @return array
      */
     public function runParser($debug = FALSE)
@@ -198,12 +199,12 @@ class FileManager
         // Фалы из архива.
         $publicDirectories = $this->public
             ->directories(self::PATH);
-        // Директории webflow.
-        $webflowDirectories = $this->webflow
+        // Директории WebFlow.
+        $webFlowDirectories = $this->webflow
             ->directories();
         foreach ($publicDirectories as $directory) {
             $folder = str_replace(self::PATH . "/", '', $directory);
-            $this->copyFiles($folder, $webflowDirectories);
+            $this->copyFiles($folder, $webFlowDirectories);
         }
         if (!$this->debug) {
             $this->public->deleteDirectory(self::PATH);

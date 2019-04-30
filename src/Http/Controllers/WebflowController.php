@@ -52,14 +52,14 @@ class WebflowController extends Controller
      */
     public function index()
     {
-        $this->fileManager->runParser(true);
+//        $this->fileManager->runParser(true);
         return view('webflow-integration::admin.webflow.index');
     }
 
     /**
      * Загрузка архива.
      *
-     * @param Request $request
+     * @param WebflowLoadRequest $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function load(WebflowLoadRequest $request)
@@ -77,7 +77,7 @@ class WebflowController extends Controller
         $this->fileManager->unzip($realPath);
         Storage::delete($path);
 
-//        $this->fileManager->runParser();
+        $this->fileManager->runParser();
 
         return redirect()
             ->back()
