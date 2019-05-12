@@ -6,6 +6,9 @@
        data-toggle="dropdown"
        aria-haspopup="true"
        aria-expanded="false">
+        @isset($ico)
+            <i class="{{ $ico }}"></i>
+        @endisset
         Webflow
     </a>
     <div class="dropdown-menu" aria-labelledby="user-dropdown">
