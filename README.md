@@ -12,6 +12,7 @@
 [Ajax forms](https://packagist.org/packages/portedcheese/ajax-forms)
 [News](https://packagist.org/packages/portedcheese/site-news)
 [Reviews](https://packagist.org/packages/portedcheese/site-reviews)
+[Contact](https://packagist.org/packages/portedcheese/contact-page)
 
 `php artisan migrate`
 
