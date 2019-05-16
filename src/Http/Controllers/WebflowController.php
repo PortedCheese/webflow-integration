@@ -52,7 +52,6 @@ class WebflowController extends Controller
      */
     public function index()
     {
-//        $this->fileManager->runParser(true);
         return view('webflow-integration::admin.webflow.index');
     }
 

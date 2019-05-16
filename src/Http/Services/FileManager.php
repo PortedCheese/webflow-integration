@@ -29,14 +29,14 @@ class FileManager
         $this->public = Storage::disk('public');
         $this->webflow = Storage::disk('webflow');
 
-        // Если нет директории для главного шаблона, нужно создать.
-        if (! is_dir($directory = resource_path(self::LAYOUT))) {
-            mkdir($directory, 0755, true);
-        }
-        // Если нет директории для страниц, нужно создать.
-        if (! is_dir($directory = resource_path(self::PAGES))) {
-            mkdir($directory, 0755, true);
-        }
+//        // Если нет директории для главного шаблона, нужно создать.
+//        if (! is_dir($directory = resource_path(self::LAYOUT))) {
+//            mkdir($directory, 0755, true);
+//        }
+//        // Если нет директории для страниц, нужно создать.
+//        if (! is_dir($directory = resource_path(self::PAGES))) {
+//            mkdir($directory, 0755, true);
+//        }
 
         $this->debug = false;
     }

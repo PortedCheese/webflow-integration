@@ -4,6 +4,7 @@ namespace PortedCheese\WebflowIntegration;
 
 use App\Menu;
 use Illuminate\Support\ServiceProvider;
+use PortedCheese\WebflowIntegration\Console\Commands\WebdlowMakeCommand;
 use PortedCheese\WebflowIntegration\Console\Commands\WebflowParseCommand;
 
 class WebflowIntegrationServiceProvider extends ServiceProvider
@@ -39,6 +40,7 @@ class WebflowIntegrationServiceProvider extends ServiceProvider
         // Console.
         $this->commands([
             WebflowParseCommand::class,
+            WebdlowMakeCommand::class,
         ]);
 
         // Добавить меню.
