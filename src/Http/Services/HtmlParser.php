@@ -420,7 +420,7 @@ class HtmlParser
         }
         // Добавляем секцию.
         $content = new Dom();
-        $content->loadStr("@yield('content')");
+        $content->loadStr("@yield('rawContent')");
         $mainSection->addChild($content->root);
         $this->deleteIncludes();
     }
