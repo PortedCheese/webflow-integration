@@ -8,3 +8,9 @@
 
 <!-- Styles -->
 <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+
+<style>
+    .w-nav-menu[no-bootstrap] .dropdown-toggle::after {
+        display: none !important;
+    }
+</style>

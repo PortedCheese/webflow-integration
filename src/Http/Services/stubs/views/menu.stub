@@ -2,7 +2,7 @@
     @foreach($webflowMenu as $item)
         @php
             $class = "{{links}}";
-            $class .= $currentRoute == $item->route ? ' cur' : '';
+            $class .= $currentRoute == $item->route ? ' w--current' : '';
         @endphp
         @if ($role = $item->middleware)
             @role($role)

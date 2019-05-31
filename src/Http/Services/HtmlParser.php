@@ -296,13 +296,42 @@ class HtmlParser
             $this->noBootstrap($navSection);
         }
         else {
-            $theme = !empty($attributes['theme']) ? $attributes['theme'] : "dark";
-            $expand = !empty($attributes['expand']) ? $attributes['expand'] : "lg";
-            $side = !empty($attributes['side']) ? $attributes['side'] : 'l';
-            $tag->setAttribute('class', "navbar navbar-expand-{$expand} navbar-{$theme}");
             foreach ($navSection->find("*") as $item) {
                 $item->delete();
             }
+
+            $class = ["navbar"];
+
+            if (! empty($attributes['nav-theme']['value'])) {
+                $value = $attributes['nav-theme']['value'];
+                $class[] = "navbar-$value";
+            }
+            else {
+                $class[] = "navbar-light";
+            }
+
+            if (! empty($attributes['nav-bg-color']['value'])) {
+                $value = $attributes['nav-bg-color']['value'];
+                $tag->setAttribute('style', "background-color: $value;");
+            }
+            elseif (! empty($attributes['nav-bg']['value'])) {
+                $value = empty($attributes['nav-bg']['value']);
+                $class[] = "bg-$value";
+            }
+            else {
+                $class[] = "bg-light";
+            }
+
+            if (! empty($attributes['nav-expand']['value'])) {
+                $value = $attributes['nav-expand']['value'];
+                $class[] = "navbar-expand-$value";
+            }
+            else {
+                $class[] = "navbar-expand-lg";
+            }
+            $tag->setAttribute('class', implode(' ', $class));
+
+            $side = !empty($attributes['nav-side']['value']) ? $attributes['nav-side']['value'] : 'l';
             // Добавляем секцию.
             $content = new Dom();
             $content->loadStr("@include('webflow-integration::layouts.webflow.menu-default', [
@@ -324,17 +353,27 @@ class HtmlParser
     private function noBootstrap($navSection)
     {
         $linkClasses = [];
-        $dropClasses = [];
+        $dropClasses = [
+            'cover' => [],
+            'button' => [],
+            'nav' => [],
+            'navLink' => [],
+        ];
         foreach ($navSection->find('*') as $item) {
             $tag = $item->getTag();
             $name = $tag->name();
             if ($name == 'a') {
                 $this->findLinkClasses($tag, $linkClasses);
             }
-            else {
+            elseif ($name == 'div') {
                 $this->findDropdownClasses($item, $dropClasses);
             }
             $item->delete();
+        }
+        foreach ($dropClasses as &$dropClass) {
+            if (is_array($dropClass)) {
+                $dropClass = implode(" ", $dropClass);
+            }
         }
         $dropClasses['links'] = implode(" ", $linkClasses);
 
@@ -358,7 +397,7 @@ class HtmlParser
         if (empty($classes['value'])) {
             return;
         }
-        $dropClasses['cover'] = $classes['value'];
+        $this->intercectClasses($dropClasses['cover'], $classes['value']);
         $children = $item->find("*");
         foreach ($children as $child) {
             $tag = $child->getTag();
@@ -367,11 +406,11 @@ class HtmlParser
                 continue;
             }
             if ($tag->name() == 'div') {
-                $dropClasses['button'] = $classes['value'];
+                $this->intercectClasses($dropClasses['button'], $classes['value']);
                 // TODO: icon, text.
             }
-            else {
-                $dropClasses['nav'] = $classes['value'];
+            elseif ($tag->name() == 'nav') {
+                $this->intercectClasses($dropClasses['nav'], $classes['value']);
                 $linkClasses = [];
                 foreach ($child->find("*") as $item) {
                     $childTag = $item->getTag();
@@ -379,8 +418,26 @@ class HtmlParser
                         $this->findLinkClasses($childTag, $linkClasses);
                     }
                 }
-                $dropClasses['navLink'] = implode(" ", $linkClasses);
+                $linkClasses = implode(" ", $linkClasses);
+                $this->intercectClasses($dropClasses['navLink'], $linkClasses);
             }
+        }
+    }
+
+    /**
+     * Найти уникальные класссы.
+     *
+     * @param $array
+     * @param $str
+     */
+    private function intercectClasses(&$array, $str)
+    {
+        $exploded = explode(" ", $str);
+        if (empty($array)) {
+            $array = $exploded;
+        }
+        else {
+            $array = array_intersect($array, $exploded);
         }
     }
 

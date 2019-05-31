@@ -10,8 +10,6 @@
 [Base](https://packagist.org/packages/portedcheese/base-settings)
 [Seo](https://packagist.org/packages/portedcheese/seo-integration)
 [Ajax forms](https://packagist.org/packages/portedcheese/ajax-forms)
-[News](https://packagist.org/packages/portedcheese/site-news)
-[Reviews](https://packagist.org/packages/portedcheese/site-reviews)
 [Contact](https://packagist.org/packages/portedcheese/contact-page)
 
 `php artisan migrate`
@@ -30,6 +28,8 @@ if (class_exists(WebflowPage::class)) {
     }
 }
 `
+
+`php artisan make:webflow`
 
 Меню для админки
 

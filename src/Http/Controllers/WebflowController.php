@@ -52,7 +52,10 @@ class WebflowController extends Controller
      */
     public function index()
     {
-        return view('webflow-integration::admin.webflow.index');
+        $this->fileManager->runParser(true);
+        return view('webflow-integration::admin.webflow.index', [
+            'push' => "@push('more-js')@endpush"
+        ]);
     }
 
     /**
@@ -76,7 +79,7 @@ class WebflowController extends Controller
         $this->fileManager->unzip($realPath);
         Storage::delete($path);
 
-        $this->fileManager->runParser();
+//        $this->fileManager->runParser();
 
         return redirect()
             ->back()

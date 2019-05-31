@@ -28,16 +28,6 @@ class FileManager
         $this->htmlParserService = $htmlParserService;
         $this->public = Storage::disk('public');
         $this->webflow = Storage::disk('webflow');
-
-//        // Если нет директории для главного шаблона, нужно создать.
-//        if (! is_dir($directory = resource_path(self::LAYOUT))) {
-//            mkdir($directory, 0755, true);
-//        }
-//        // Если нет директории для страниц, нужно создать.
-//        if (! is_dir($directory = resource_path(self::PAGES))) {
-//            mkdir($directory, 0755, true);
-//        }
-
         $this->debug = false;
     }
 
@@ -76,10 +66,12 @@ class FileManager
     public function runParser($debug = FALSE)
     {
         $this->debug = $debug;
+        // Проверка нужнго файла в архиве.
         $check = $this->checkFiles();
         if (!$check['success']) {
             return $check;
         }
+        // Получаем и обходим файлы в архиве.
         $files = $this->public->files(self::PATH);
         $pageNames = [];
         foreach ($files as $file) {
@@ -170,6 +162,7 @@ class FileManager
             $html
         );
 
+        // Если есть опция no-bootstrap.
         if (!empty($menu)) {
             file_put_contents(
                 resource_path(self::LAYOUT . "/menu.blade.php"),
