@@ -54,7 +54,8 @@ class WebflowController extends Controller
     {
 //        $this->fileManager->runParser(true);
         return view('webflow-integration::admin.webflow.index', [
-            'push' => "@push('more-js')@endpush"
+            'push' => "@push('more-js')@endpush",
+            'contactMap' => "@includeIf('contact-page::site.map')",
         ]);
     }
 
