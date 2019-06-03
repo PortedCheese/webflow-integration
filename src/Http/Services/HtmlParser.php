@@ -489,7 +489,9 @@ class HtmlParser
     {
         $embed = $this->body->find(".w-embed");
         foreach ($embed as $item) {
-            $item->delete();
+            if (empty($item->getAttribute('blade'))) {
+                $item->delete();
+            }
         }
     }
 
