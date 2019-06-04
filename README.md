@@ -37,4 +37,4 @@ if (class_exists(WebflowPage::class)) {
 
 На странице должен быть блок с аттрибутом main-section="main-section"
 
-Что бы заработало меню сайта, нужен элемент nav с атрибутом navigation-menu='navigation-menu'. Если у него будет аттрибут no-bootstrap, то будет разобранно то что внутри, при условии что ссылки будут сразу, а дроп элемет будет дивом. Если не указан элемент no-bootstrap, то будет выведенно меню по бутсрапу при этом можно указать аттрибут theme(bg-{theme}), по умолчанию dark, аттрибут expand (navbar-expand-{expand}), аттрибут side(m{side}-auto)
+Что бы заработало меню сайта, нужен элемент nav с атрибутом navigation-menu='navigation-menu'.
