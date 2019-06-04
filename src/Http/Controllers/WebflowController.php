@@ -52,7 +52,9 @@ class WebflowController extends Controller
      */
     public function index()
     {
-        $this->fileManager->runParser(true);
+        if (env("WEBFLOW_DEBUG", false)) {
+            $this->fileManager->runParser(true);
+        }
         return view('webflow-integration::admin.webflow.index', [
             'push' => "@push('more-js')@endpush",
             'contactMap' => "@includeIf('contact-page::site.map', ['size' => 400, 'zoom' => 14, 'preset' => 'islands#blueIcon'])",
@@ -80,7 +82,9 @@ class WebflowController extends Controller
         $this->fileManager->unzip($realPath);
         Storage::delete($path);
 
-//        $this->fileManager->runParser();
+        if (! env("WEBFLOW_DEBUG", false)) {
+            $this->fileManager->runParser();
+        }
 
         return redirect()
             ->back()

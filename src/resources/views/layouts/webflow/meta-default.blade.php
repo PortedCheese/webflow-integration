@@ -18,5 +18,3 @@
         {!! $meta !!}
     @endforeach
 @endisset
-
-@stack('more-meta')

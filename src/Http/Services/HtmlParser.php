@@ -213,6 +213,9 @@ class HtmlParser
         $content = new Dom();
         $content->loadStr("@include('webflow-integration::layouts.webflow.meta-default')");
         $metaDefault = $content->root;
+        $content = new Dom();
+        $content->loadStr("@stack('more-meta')");
+        $metaMore = $content->root;
         // Обойти все мета.
         $metas = $this->head->find("meta");
         $main = true;
@@ -220,6 +223,7 @@ class HtmlParser
         foreach ($metas as $meta) {
             if ($main) {
                 $this->head->insertBefore($metaDefault, $meta->id());
+                $this->head->insertBefore($metaMore, $meta->id());
                 $main = false;
             }
             $meta->delete();
@@ -262,6 +266,11 @@ class HtmlParser
             }
             // Для последнего добавляем доп. стили.
             if (++$i === $last) {
+                // Добавляем библиотеки js.
+                $element = new Dom();
+                $element->loadStr("@stack('js-lib')");
+                $this->head->insertAfter($element->root, $item->id());
+
                 $content = new Dom();
                 $content->loadStr("@stack('more-css')");
                 $this->head->insertAfter($content->root, $item->id());
