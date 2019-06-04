@@ -58,6 +58,7 @@ class WebflowController extends Controller
         return view('webflow-integration::admin.webflow.index', [
             'push' => "@push('more-js')@endpush",
             'contactMap' => "@includeIf('contact-page::site.map', ['size' => 400, 'zoom' => 14, 'preset' => 'islands#blueIcon'])",
+            'formFile' => "@includeIf('webflow-integration::layouts.file-input', ['name' => 'file'])",
         ]);
     }
 
