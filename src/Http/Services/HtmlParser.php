@@ -2,6 +2,7 @@
 
 namespace PortedCheese\WebflowIntegration\Http\Services;
 
+use Illuminate\Support\Facades\Log;
 use PHPHtmlParser\Dom;
 use PortedCheese\SeoIntegration\Models\Meta;
 
@@ -55,12 +56,24 @@ class HtmlParser
      */
     public function parsePage($filePath, $model)
     {
-        $this->dom->loadFromFile($filePath, self::CONFIG);
+        $content = file_get_contents($filePath);
+        $content = str_replace(
+            ['<iframe class=', "></iframe>"],
+            ["replaceFrame", "replaceCloseFrame"],
+            $content
+        );
+        $this->dom->loadStr($content, self::CONFIG);
+//        $this->dom->loadFromFile($filePath, self::CONFIG);
         $this->pageMetas($model);
         $this->extendPageBody();
         $html = "Не найден элемент main-section";
         if (!empty($this->body)) {
             $html = $this->body->outerHtml;
+            $html = str_replace(
+                ["replaceFrame", "replaceCloseFrame"],
+                ['<iframe class=', "></iframe>"],
+                $html
+            );
         }
         $blade = str_replace(
             '{{html}}',
@@ -78,13 +91,26 @@ class HtmlParser
      */
     public function parseIndex($filePath)
     {
-        $this->dom->loadFromFile($filePath, self::CONFIG);
+        $content = file_get_contents($filePath);
+        $content = str_replace(
+            ['<iframe class=', "></iframe>"],
+            ["replaceFrame", "replaceCloseFrame"],
+            $content
+        );
+
+        $this->dom->loadStr($content, self::CONFIG);
+//        $this->dom->loadFromFile($filePath, self::CONFIG);
 
         $this->extendIndexHead();
 
         $this->extendIndexBody();
 
         $html = $this->dom->outerHtml;
+        $html = str_replace(
+            ["replaceFrame", "replaceCloseFrame"],
+            ['<iframe class=', "></iframe>"],
+            $html
+        );
         // Окружить body #app для VueJs.
         $html = str_replace(
             ["<body>", "VueJsReplace"],
@@ -190,6 +216,7 @@ class HtmlParser
         if (empty($this->body)) {
             return;
         }
+        $this->changeJsonScripts();
         $this->changeImages();
         $this->deleteIncludes();
     }
@@ -561,6 +588,29 @@ class HtmlParser
                 strripos($value, 'https://') === FALSE
             ) {
                 $tag->setAttribute('src', "{{ asset('webflow/{$value}') }}");
+            }
+        }
+    }
+
+    /**
+     * Изменить скрипты лайтбокса.
+     */
+    private function changeJsonScripts()
+    {
+        $json = $this->body->find('script.w-json');
+        if (count($json)) {
+            foreach ($json as $element) {
+                foreach ($element->getChildren() as &$child) {
+                    $decoded = json_decode($child->text, true);
+                    if (!empty($decoded['items'])) {
+                        foreach ($decoded['items'] as &$item) {
+                            if (! empty($item['url']) && !empty($item['type']) && $item['type'] == 'image') {
+                                $item['url'] = "webflow/" . $item['url'];
+                            }
+                        }
+                        $child->setText(json_encode($decoded));
+                    }
+                }
             }
         }
     }
