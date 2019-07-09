@@ -57,11 +57,7 @@ class HtmlParser
     public function parsePage($filePath, $model)
     {
         $content = file_get_contents($filePath);
-        $content = str_replace(
-            ['<iframe class=', "></iframe>"],
-            ["replaceFrame", "replaceCloseFrame"],
-            $content
-        );
+        $this->removeFrame($content);
         $this->dom->loadStr($content, self::CONFIG);
 //        $this->dom->loadFromFile($filePath, self::CONFIG);
         $this->pageMetas($model);
@@ -69,11 +65,7 @@ class HtmlParser
         $html = "Не найден элемент main-section";
         if (!empty($this->body)) {
             $html = $this->body->outerHtml;
-            $html = str_replace(
-                ["replaceFrame", "replaceCloseFrame"],
-                ['<iframe class=', "></iframe>"],
-                $html
-            );
+            $this->removeFrame($html, true);
         }
         $blade = str_replace(
             '{{html}}',
@@ -92,11 +84,7 @@ class HtmlParser
     public function parseIndex($filePath)
     {
         $content = file_get_contents($filePath);
-        $content = str_replace(
-            ['<iframe class=', "></iframe>"],
-            ["replaceFrame", "replaceCloseFrame"],
-            $content
-        );
+        $this->removeFrame($content);
 
         $this->dom->loadStr($content, self::CONFIG);
 //        $this->dom->loadFromFile($filePath, self::CONFIG);
@@ -106,11 +94,7 @@ class HtmlParser
         $this->extendIndexBody();
 
         $html = $this->dom->outerHtml;
-        $html = str_replace(
-            ["replaceFrame", "replaceCloseFrame"],
-            ['<iframe class=', "></iframe>"],
-            $html
-        );
+        $this->removeFrame($html, true);
         // Окружить body #app для VueJs.
         $html = str_replace(
             ["<body>", "VueJsReplace"],
@@ -118,6 +102,33 @@ class HtmlParser
             $html
         );
         return [$html, $this->menu];
+    }
+
+    /**
+     * Заменить iframe.
+     *
+     * @param $html
+     * @param bool $restore
+     */
+    private function removeFrame(&$html, $restore = false)
+    {
+        if (! $restore) {
+            // Убрать iframe, потому что тег может быть в json,
+            // и парсер воспринимает это как отдельный тэг, а не часть строки.
+            $html = str_replace(
+                ['<iframe class=', "></iframe>"],
+                ["replaceFrame", "replaceCloseFrame"],
+                $html
+            );
+        }
+        else {
+            // Вернуть iframe.
+            $html = str_replace(
+                ["replaceFrame", "replaceCloseFrame"],
+                ['<iframe class=', "></iframe>"],
+                $html
+            );
+        }
     }
 
     /**
@@ -218,6 +229,7 @@ class HtmlParser
         }
         $this->changeJsonScripts();
         $this->changeImages();
+        $this->changeDocumentsLinks();
         $this->deleteIncludes();
     }
 
@@ -314,7 +326,138 @@ class HtmlParser
         $this->changeMenu();
         $this->changeContent();
         $this->changeImages();
+        $this->changeDocumentsLinks();
         $this->changeJs();
+    }
+
+    /**
+     * Расширяем контент.
+     */
+    private function changeContent()
+    {
+        // Удаляем все что есть в main-section.
+        $mainSection = $this->body->find("[main-section='main-section]")[0];
+        if (empty($mainSection)) {
+            return;
+        }
+        foreach ($mainSection->find('*') as $item) {
+            $item->delete();
+        }
+        // Добавляем секцию.
+        $content = new Dom();
+        $content->loadStr("@include('layouts.main-section')");
+        $mainSection->addChild($content->root);
+        $this->deleteIncludes();
+    }
+
+    /**
+     * Расширения для гиса.
+     */
+    private function deleteIncludes()
+    {
+        $embed = $this->body->find(".w-embed");
+        foreach ($embed as $item) {
+            if (empty($item->getAttribute('blade'))) {
+                $item->delete();
+            }
+        }
+    }
+
+    /**
+     * Исправить ссылки на документы.
+     */
+    private function changeDocumentsLinks()
+    {
+        $links = $this->body->find("a[href*='documents\/']");
+        foreach ($links as $link) {
+            $value = $link->getAttribute('href');
+            $value = str_replace("documents/", "/webflow/documents/", $value);
+            $link->getTag()->setAttribute('href', $value);
+        }
+    }
+
+    /**
+     * Изменить ссылки у изображений.
+     */
+    private function changeImages()
+    {
+        $images = $this->body->find("img[src*='images\/']");
+        foreach ($images as $image) {
+            $value = $image->getAttribute('src');
+            $value = str_replace("images/", "/webflow/images/", $value);
+            $image->getTag()->setAttribute('src', $value);
+
+            $value = $image->getAttribute('srcset');
+            $value = str_replace("images/", "/webflow/images/", $value);
+            $image->getTag()->setAttribute('srcset', $value);
+        }
+    }
+
+    /**
+     * Заменить js.
+     */
+    private function changeJs()
+    {
+        // Обходим все js которые есть.
+        $scripts = $this->body->find("script[type='text/javascript']");
+
+        // Добавляем фразу что бы потом заменить ее на закрывающий div.
+        $content = new Dom();
+        $content->loadStr("VueJsReplace");
+        $vue = $content->root;
+        if (empty($scripts)) {
+            $this->body->addChild($vue);
+        }
+        else {
+            $this->body->insertBefore($vue, $scripts[0]->id());
+        }
+
+        // Js по умолчанию.
+        $content = new Dom();
+        $content->loadStr("@include('webflow-integration::layouts.webflow.js-default')");
+        $jsDefault = $content->root;
+        if (!empty($scripts)) {
+            $this->body->insertAfter($jsDefault, $vue->id());
+        }
+        else {
+            $this->body->addChild($jsDefault);
+        }
+
+        foreach ($scripts as $item) {
+            // Меняем местоположение стиля.
+            $tag = $item->getTag();
+            $value = $tag->getAttribute('src')['value'];
+            // если это не сторонний стиль.
+            if (
+                strrpos($value, 'http:://') === FALSE &&
+                strripos($value, 'https://') === FALSE
+            ) {
+                $tag->setAttribute('src', "{{ asset('webflow/{$value}') }}");
+            }
+        }
+    }
+
+    /**
+     * Изменить скрипты лайтбокса.
+     */
+    private function changeJsonScripts()
+    {
+        $json = $this->body->find('script.w-json');
+        if (count($json)) {
+            foreach ($json as $element) {
+                foreach ($element->getChildren() as &$child) {
+                    $decoded = json_decode($child->text, true);
+                    if (!empty($decoded['items'])) {
+                        foreach ($decoded['items'] as &$item) {
+                            if (! empty($item['url']) && !empty($item['type']) && $item['type'] == 'image') {
+                                $item['url'] = "webflow/" . $item['url'];
+                            }
+                        }
+                        $child->setText(json_encode($decoded));
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -496,122 +639,5 @@ class HtmlParser
             return;
         }
         $linkClasses = array_intersect($linkClasses, $exploded);
-    }
-
-    /**
-     * Расширяем контент.
-     */
-    private function changeContent()
-    {
-        // Удаляем все что есть в main-section.
-        $mainSection = $this->body->find("[main-section='main-section]")[0];
-        if (empty($mainSection)) {
-            return;
-        }
-        foreach ($mainSection->find('*') as $item) {
-            $item->delete();
-        }
-        // Добавляем секцию.
-        $content = new Dom();
-        $content->loadStr("@include('layouts.main-section')");
-        $mainSection->addChild($content->root);
-        $this->deleteIncludes();
-    }
-
-    /**
-     * Расширения для гиса.
-     */
-    private function deleteIncludes()
-    {
-        $embed = $this->body->find(".w-embed");
-        foreach ($embed as $item) {
-            if (empty($item->getAttribute('blade'))) {
-                $item->delete();
-            }
-        }
-    }
-
-    /**
-     * Изменить ссылки у изображений.
-     */
-    private function changeImages()
-    {
-        $images = $this->body->find("img[src*='images\/']");
-        foreach ($images as $image) {
-            $value = $image->getAttribute('src');
-            $value = str_replace("images/", "/webflow/images/", $value);
-            $image->getTag()->setAttribute('src', $value);
-
-            $value = $image->getAttribute('srcset');
-            $value = str_replace("images/", "/webflow/images/", $value);
-            $image->getTag()->setAttribute('srcset', $value);
-        }
-    }
-
-    /**
-     * Заменить js.
-     */
-    private function changeJs()
-    {
-        // Обходим все js которые есть.
-        $scripts = $this->body->find("script[type='text/javascript']");
-
-        // Добавляем фразу что бы потом заменить ее на закрывающий div.
-        $content = new Dom();
-        $content->loadStr("VueJsReplace");
-        $vue = $content->root;
-        if (empty($scripts)) {
-            $this->body->addChild($vue);
-        }
-        else {
-            $this->body->insertBefore($vue, $scripts[0]->id());
-        }
-
-        // Js по умолчанию.
-        $content = new Dom();
-        $content->loadStr("@include('webflow-integration::layouts.webflow.js-default')");
-        $jsDefault = $content->root;
-        if (!empty($scripts)) {
-            $this->body->insertAfter($jsDefault, $vue->id());
-        }
-        else {
-            $this->body->addChild($jsDefault);
-        }
-
-        foreach ($scripts as $item) {
-            // Меняем местоположение стиля.
-            $tag = $item->getTag();
-            $value = $tag->getAttribute('src')['value'];
-            // если это не сторонний стиль.
-            if (
-                strrpos($value, 'http:://') === FALSE &&
-                strripos($value, 'https://') === FALSE
-            ) {
-                $tag->setAttribute('src', "{{ asset('webflow/{$value}') }}");
-            }
-        }
-    }
-
-    /**
-     * Изменить скрипты лайтбокса.
-     */
-    private function changeJsonScripts()
-    {
-        $json = $this->body->find('script.w-json');
-        if (count($json)) {
-            foreach ($json as $element) {
-                foreach ($element->getChildren() as &$child) {
-                    $decoded = json_decode($child->text, true);
-                    if (!empty($decoded['items'])) {
-                        foreach ($decoded['items'] as &$item) {
-                            if (! empty($item['url']) && !empty($item['type']) && $item['type'] == 'image') {
-                                $item['url'] = "webflow/" . $item['url'];
-                            }
-                        }
-                        $child->setText(json_encode($decoded));
-                    }
-                }
-            }
-        }
     }
 }
