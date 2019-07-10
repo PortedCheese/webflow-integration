@@ -328,6 +328,7 @@ class HtmlParser
         $this->changeImages();
         $this->changeDocumentsLinks();
         $this->changeJs();
+        $this->changeJsonScripts();
     }
 
     /**
