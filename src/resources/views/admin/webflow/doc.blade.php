@@ -21,6 +21,7 @@
     <p class="text-danger">
         Для форм нужно добавлять checkbox политики <code>name="privacy_policy"</code> что бы пропускало отправку
     </p>
+    <p>Если не получается поменять имя у инпута, можно дописать <code>data-change-name="{name}"</code> и он заменит имя</p>
     <p>
         Что бы добавить в форму файл <code>{{ $formFile }}</code>
     </p>

@@ -218,6 +218,31 @@ class HtmlParser
     }
 
     /**
+     * Меняем head.
+     */
+    private function extendIndexHead()
+    {
+        $this->head = $this->dom->find('head');
+        $this->changeStyles();
+        $this->changeMeta();
+    }
+
+    /**
+     * Меняем body.
+     */
+    private function extendIndexBody()
+    {
+        $this->body = $this->dom->find('body');
+        $this->changeMenu();
+        $this->changeContent();
+        $this->changeImages();
+        $this->changeDocumentsLinks();
+        $this->changeJs();
+        $this->changeJsonScripts();
+        $this->changePilicyCheckName();
+    }
+
+    /**
      * Меняем страницу.
      */
     private function extendPageBody()
@@ -231,16 +256,19 @@ class HtmlParser
         $this->changeImages();
         $this->changeDocumentsLinks();
         $this->deleteIncludes();
+        $this->changePilicyCheckName();
     }
 
     /**
-     * Меняем head.
+     * Изменить имена инпутов.
      */
-    private function extendIndexHead()
+    private function changePilicyCheckName()
     {
-        $this->head = $this->dom->find('head');
-        $this->changeStyles();
-        $this->changeMeta();
+        $inputs = $this->body->find("input[data-change-name]");
+        foreach ($inputs as $input) {
+            $value = $input->getAttribute("data-change-name");
+            $input->getTag()->setAttribute('name', $value);
+        }
     }
 
     /**
@@ -330,20 +358,6 @@ class HtmlParser
                 $this->head->insertAfter($content->root, $item->id());
             }
         }
-    }
-
-    /**
-     * Меняем body.
-     */
-    private function extendIndexBody()
-    {
-        $this->body = $this->dom->find('body');
-        $this->changeMenu();
-        $this->changeContent();
-        $this->changeImages();
-        $this->changeDocumentsLinks();
-        $this->changeJs();
-        $this->changeJsonScripts();
     }
 
     /**
