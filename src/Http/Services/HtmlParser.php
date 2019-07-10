@@ -279,6 +279,21 @@ class HtmlParser
      */
     private function changeStyles()
     {
+        // Заменить иконку.
+        $icon = $this->head->find("link[rel='shortcut icon']");
+        foreach ($icon as $item) {
+            $tag = $item->getTag();
+            $value = $tag->getAttribute('href');
+            if (!empty($value['value'])) {
+                $value = $value['value'];
+                if (
+                    strrpos($value, 'http:://') === FALSE &&
+                    strripos($value, 'https://') === FALSE
+                ) {
+                    $tag->setAttribute('href', "{{ asset('webflow/{$value}') }}");
+                }
+            }
+        }
         // Обходим все стили которые есть.
         $styles = $this->head->find("link[rel='stylesheet']");
         $last = count($styles);
