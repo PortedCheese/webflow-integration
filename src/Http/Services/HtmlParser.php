@@ -391,6 +391,10 @@ class HtmlParser
                 $item->delete();
             }
         }
+        $embed = $this->body->find("._w-embed");
+        foreach ($embed as $item) {
+            $item->delete();
+        }
     }
 
     /**
