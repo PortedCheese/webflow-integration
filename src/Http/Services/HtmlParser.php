@@ -200,10 +200,10 @@ class HtmlParser
      */
     private function createTitleMeta($page)
     {
-        $title = $this->head->find('title')[0];
-        if (empty($title)) {
+        if (empty($this->head->find('title')[0])) {
             return;
         }
+        $title = $this->head->find('title')[0];
         $tag = $title->getTag();
         $result = Meta::getModel('webflow_pages', $page->id, "title");
         if (!$result['success']) {

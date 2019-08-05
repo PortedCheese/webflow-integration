@@ -11,8 +11,8 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "paquettg/php-html-parser": "dev-master",
-        "chumper/zipper": "dev-master",
+        "paquettg/php-html-parser": "^2.0",
+        "chumper/zipper": "^1.0",
         "portedcheese/base-settings": "^1.1",
         "portedcheese/seo-integration": "^1.0",
         "portedcheese/ajax-forms": "^1.1",
