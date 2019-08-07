@@ -85,13 +85,18 @@ class WebflowController extends Controller
         $this->fileManager->unzip($realPath);
         Storage::delete($path);
 
+        $result = [
+            'success' => true,
+            'message' => "debug",
+        ];
+
         if (! env("WEBFLOW_DEBUG", false)) {
-            $this->fileManager->runParser();
+            $result = $this->fileManager->runParser();
         }
 
         return redirect()
             ->back()
-            ->with('success', 'Загружено');
+            ->with($result['success'] ? 'success' : "danger", $result['message']);
     }
 
     /**

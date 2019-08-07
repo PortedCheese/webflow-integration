@@ -18,3 +18,6 @@
         {!! $meta !!}
     @endforeach
 @endisset
+
+{{--<link href="{{ asset("favicon.png") }}" rel="apple-touch-icon" type="image/x-icon">--}}
+<link href="{{ asset("favicon.ico") }}" rel="shortcut icon" type="image/x-icon">

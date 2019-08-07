@@ -68,7 +68,10 @@ class FileManager
         $this->debug = $debug;
         // Проверка нужнго файла в архиве.
         $check = $this->checkFiles();
-        if (!$check['success']) {
+        if (! $check['success']) {
+            if (!$this->debug) {
+                $this->public->deleteDirectory(self::PATH);
+            }
             return $check;
         }
         // Получаем и обходим файлы в архиве.
@@ -79,7 +82,8 @@ class FileManager
             if ($name == 'index.html') {
                 $this->makeIndex($name);
             }
-            else {
+            // Файл должен быть html.
+            elseif (strpos($name, ".html") !== false) {
                 $pageNames[] = $this->makePage($name);
             }
         }
@@ -91,6 +95,11 @@ class FileManager
         }
         // Копируем файлы и чистим содержимое архива.
         $this->copyFolders();
+
+        return [
+            'success' => true,
+            'message' => 'Загружено',
+        ];
     }
 
     /**
@@ -108,6 +117,7 @@ class FileManager
      * Создать страницу.
      *
      * @param $file
+     * @return mixed|void
      */
     private function makePage($file)
     {

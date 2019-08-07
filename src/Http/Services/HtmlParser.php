@@ -38,6 +38,7 @@ class HtmlParser
     protected $head;
     protected $body;
     protected $menu;
+    protected $comments;
 
     public function __construct()
     {
@@ -45,6 +46,7 @@ class HtmlParser
         $this->head = NULL;
         $this->body = NULL;
         $this->menu = [];
+        $this->comments = [];
     }
 
     /**
@@ -84,10 +86,11 @@ class HtmlParser
     public function parseIndex($filePath)
     {
         $content = file_get_contents($filePath);
+        $content = str_replace("<!DOCTYPE html>", "doctype", $content);
+        $this->removeComments($content);
         $this->removeFrame($content);
 
         $this->dom->loadStr($content, self::CONFIG);
-//        $this->dom->loadFromFile($filePath, self::CONFIG);
 
         $this->extendIndexHead();
 
@@ -95,13 +98,45 @@ class HtmlParser
 
         $html = $this->dom->outerHtml;
         $this->removeFrame($html, true);
+        $this->removeComments($html, true);
         // Окружить body #app для VueJs.
         $html = str_replace(
             ["<body>", "VueJsReplace"],
             ["<body><div id='app'>", "</div>"],
             $html
         );
+        $html = str_replace("doctype", "<!doctype html>", $html);
         return [$html, $this->menu];
+    }
+
+    /**
+     * Удалить комментарии.
+     * 
+     * @param $html
+     * @param bool $restore
+     */
+    private function removeComments(&$html, $restore = false)
+    {
+        if (! $restore) {
+            $this->comments = [];
+            // Убрать все коменты.
+            $matches = [];
+            preg_match_all("<!--(.*?)-->", $html, $matches);
+            if (!empty($matches[0])) {
+                foreach ($matches[0] as $match) {
+                    $forReplace = "<$match>";
+                    $this->comments[] = $forReplace;
+                    $count = count($this->comments) - 1;
+                    $html = str_replace($forReplace, "replacedComment$count", $html);
+                }
+            }
+        }
+        elseif (! empty($this->comments)) {
+            foreach ($this->comments as $key => $comment) {
+                $html = str_replace("replacedComment$key", $comment, $html);
+            }
+            $this->comments = [];
+        }
     }
 
     /**
@@ -237,9 +272,10 @@ class HtmlParser
         $this->changeContent();
         $this->changeImages();
         $this->changeDocumentsLinks();
+        $this->changeLinksHtmlHref();
         $this->changeJs();
         $this->changeJsonScripts();
-        $this->changePilicyCheckName();
+        $this->changeInputNames();
     }
 
     /**
@@ -255,14 +291,15 @@ class HtmlParser
         $this->changeJsonScripts();
         $this->changeImages();
         $this->changeDocumentsLinks();
+        $this->changeLinksHtmlHref();
         $this->deleteIncludes();
-        $this->changePilicyCheckName();
+        $this->changeInputNames();
     }
 
     /**
      * Изменить имена инпутов.
      */
-    private function changePilicyCheckName()
+    private function changeInputNames()
     {
         $inputs = $this->body->find("input[data-change-name]");
         foreach ($inputs as $input) {
@@ -307,20 +344,14 @@ class HtmlParser
      */
     private function changeStyles()
     {
-        // Заменить иконку.
+        // Удалить иконки.
         $icon = $this->head->find("link[rel='shortcut icon']");
         foreach ($icon as $item) {
-            $tag = $item->getTag();
-            $value = $tag->getAttribute('href');
-            if (!empty($value['value'])) {
-                $value = $value['value'];
-                if (
-                    strrpos($value, 'http:://') === FALSE &&
-                    strripos($value, 'https://') === FALSE
-                ) {
-                    $tag->setAttribute('href', "{{ asset('webflow/{$value}') }}");
-                }
-            }
+            $item->delete();
+        }
+        $icon = $this->head->find("link[rel='apple-touch-icon']");
+        foreach ($icon as $item) {
+            $item->delete();
         }
         // Обходим все стили которые есть.
         $styles = $this->head->find("link[rel='stylesheet']");
@@ -406,6 +437,19 @@ class HtmlParser
         foreach ($links as $link) {
             $value = $link->getAttribute('href');
             $value = str_replace("documents/", "/webflow/documents/", $value);
+            $link->getTag()->setAttribute('href', $value);
+        }
+    }
+
+    /**
+     * Удалить html из ссылок.
+     */
+    private function changeLinksHtmlHref()
+    {
+        $links = $this->body->find("a[href*=.html]");
+        foreach ($links as $link) {
+            $value = $link->getAttribute('href');
+            $value = str_replace(".html", "", $value);
             $link->getTag()->setAttribute('href', $value);
         }
     }
