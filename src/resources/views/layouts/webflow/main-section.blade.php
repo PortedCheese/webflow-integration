@@ -4,7 +4,7 @@
     </div>
 @endif
 @hasSection('content')
-    <div class="row">
+    <div class="row my-5">
         @hasSection('sidebar')
             <aside class="col-3">
                 <div class="row">
