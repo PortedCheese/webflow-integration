@@ -12,11 +12,11 @@
     "minimum-stability": "dev",
     "require": {
         "paquettg/php-html-parser": "^2.0",
-        "chumper/zipper": "^1.0",
-        "portedcheese/base-settings": "^1.1",
-        "portedcheese/seo-integration": "^1.0",
-        "portedcheese/ajax-forms": "^1.1",
-        "portedcheese/contact-page": "^1.0"
+        "zanysoft/laravel-zip": "^1.0",
+        "portedcheese/base-settings": "^v1.2",
+        "portedcheese/seo-integration": "^v1.0",
+        "portedcheese/ajax-forms": "^v1.1",
+        "portedcheese/contact-page": "v1.0"
     },
     "autoload": {
         "psr-4": {

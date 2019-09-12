@@ -82,8 +82,13 @@ class WebflowController extends Controller
             ->store("webflow");
 
         $realPath = Storage::disk('public')->path($path);
-        $this->fileManager->unzip($realPath);
+        $unzip = $this->fileManager->unzip($realPath);
         Storage::delete($path);
+        if (! $unzip) {
+            return redirect()
+                ->back()
+                ->with('danger', 'Ошибка при распаковке архива');
+        }
 
         $result = [
             'success' => true,

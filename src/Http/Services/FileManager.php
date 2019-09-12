@@ -5,9 +5,8 @@ namespace PortedCheese\WebflowIntegration\Http\Services;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use PHPHtmlParser\Dom;
-use Chumper\Zipper\Facades\Zipper;
 use PortedCheese\WebflowIntegration\Models\WebflowPage;
+use ZanySoft\Zip\Zip;
 
 class FileManager
 {
@@ -54,7 +53,13 @@ class FileManager
      */
     public function unzip($path)
     {
-        Zipper::make($path)->extractTo('storage/' . self::PATH);
+        try {
+            Zip::open($path)->extract("storage/" . self::PATH);
+            return true;
+        }
+        catch (\Exception $exception) {
+            return false;
+        }
     }
 
     /**
