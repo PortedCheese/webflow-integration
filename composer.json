@@ -16,7 +16,7 @@
         "portedcheese/base-settings": "^v1.2",
         "portedcheese/seo-integration": "^v1.0",
         "portedcheese/ajax-forms": "^v1.1",
-        "portedcheese/contact-page": "v1.0"
+        "portedcheese/contact-page": "^v1.0"
     },
     "autoload": {
         "psr-4": {
