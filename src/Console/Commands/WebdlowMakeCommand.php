@@ -73,7 +73,7 @@ class WebdlowMakeCommand extends Command
             'title' => $title,
             'template' => "webflow-integration::admin.webflow.menu",
             'url' => "#",
-            'class' => '@fas fa-ruler-combined',
+            'ico' => 'fas fa-ruler-combined',
             'menu_id' => $menu->id,
             'middleware' => "admin",
         ];
