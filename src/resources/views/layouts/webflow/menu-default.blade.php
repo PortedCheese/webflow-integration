@@ -10,7 +10,7 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav m{{ $side }}-auto">
-            @includeIf('layouts.menu.index', ['menu' => $webflowMenu])
+            @includeIf('admin-site-menu::layouts.index', ['menu' => $webflowMenu])
         </ul>
     </div>
 @endisset
