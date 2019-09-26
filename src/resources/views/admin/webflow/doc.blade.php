@@ -44,11 +44,17 @@
                     <p>
                         К элементу <code>w-embed</code> нужно добавить аттрибут <code>blade="blade"</code> что бы содержимое не удалилось
                     </p>
+                    <p>
+                        А лучше вообще не использовать embed
+                    </p>
                 </div>
 
                 <div class="tab-pane fade" id="forms" role="tabpanel" aria-labelledby="forms-tab">
                     <p class="text-danger">
                         Для форм нужно добавлять checkbox политики <code>name="privacy_policy"</code> что бы пропускало отправку
+                    </p>
+                    <p>
+                        Имя у формы берется либо из аттрибута <code>data-name</code> либо из <code>name</code>
                     </p>
                     <p>Если не получается поменять имя у инпута, можно дописать <code>data-change-name="{name}"</code> и он заменит имя</p>
                     <p>
@@ -63,7 +69,12 @@
 
                 <div class="tab-pane fade" id="map" role="tabpanel" aria-labelledby="map-tab">
                     <p>
-                        Должен быть скачан пакет contact-page, он включен если есть страница "Контакты". Что бы добавить карту на страницу <code>{{ $contactMap }}</code>(если написать без параметров будут поставлены те то указаны, при этом если указать параметр preset будут игнорироваться настройки иконки для каждой метки), добавится блок с id <code>page-map</code> в нем будет карта с метками, заполненными на странице "Контакты".
+                        Что бы добавить карту на страницу <code>{{ $contactMap }}</code>
+                        <br>
+                        <e>(если написать без параметров будут поставлены те то указаны, при этом если указать параметр preset будут игнорироваться настройки иконки для каждой метки)</e>,
+                        <br>
+                        добавится блок с id <code>page-map</code> в нем будет карта с метками, заполненными на странице "Контакты".
+                        <br>
                         <a href="https://tech.yandex.ru/maps/jsapi/doc/2.1/ref/reference/option.presetStorage-docpage/">Список возможных меток</a>
                     </p>
                 </div>

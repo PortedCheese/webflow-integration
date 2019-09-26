@@ -55,13 +55,19 @@ class HtmlParser
      * @param $filePath
      * @param $model
      * @return mixed
+     * @throws \PHPHtmlParser\Exceptions\ChildNotFoundException
+     * @throws \PHPHtmlParser\Exceptions\CircularException
+     * @throws \PHPHtmlParser\Exceptions\NotLoadedException
+     * @throws \PHPHtmlParser\Exceptions\StrictException
      */
     public function parsePage($filePath, $model)
     {
         $content = file_get_contents($filePath);
         $this->removeFrame($content);
+        $this->fixQuot($content);
+
         $this->dom->loadStr($content, self::CONFIG);
-//        $this->dom->loadFromFile($filePath, self::CONFIG);
+
         $this->pageMetas($model);
         $this->extendPageBody();
         $html = "Не найден элемент main-section";
@@ -82,6 +88,9 @@ class HtmlParser
      *
      * @param $filePath
      * @return array
+     * @throws \PHPHtmlParser\Exceptions\ChildNotFoundException
+     * @throws \PHPHtmlParser\Exceptions\CircularException
+     * @throws \PHPHtmlParser\Exceptions\StrictException
      */
     public function parseIndex($filePath)
     {
@@ -89,6 +98,7 @@ class HtmlParser
         $content = str_replace("<!DOCTYPE html>", "doctype", $content);
         $this->removeComments($content);
         $this->removeFrame($content);
+        $this->fixQuot($content);
 
         $this->dom->loadStr($content, self::CONFIG);
 
@@ -101,8 +111,8 @@ class HtmlParser
         $this->removeComments($html, true);
         // Окружить body #app для VueJs.
         $html = str_replace(
-            ["<body>", "VueJsReplace"],
-            ["<body><div id='app'>", "</div>"],
+            ["VueJsReplaceBegin", "VueJsReplace"],
+            ["<div id='app'>", "</div>"],
             $html
         );
         $html = str_replace("doctype", "<!doctype html>", $html);
@@ -166,10 +176,21 @@ class HtmlParser
         }
     }
 
+    private function fixQuot(&$html)
+    {
+        $html = str_replace(
+            ["&quot;", "&#x27;"],
+            ["\"", "'"],
+            $html
+        );
+    }
+
     /**
      * Теги для страницы.
      *
      * @param $page
+     * @throws \PHPHtmlParser\Exceptions\ChildNotFoundException
+     * @throws \PHPHtmlParser\Exceptions\NotLoadedException
      */
     private function pageMetas($page)
     {
@@ -270,12 +291,16 @@ class HtmlParser
         $this->body = $this->dom->find('body');
         $this->changeMenu();
         $this->changeContent();
+
+        $this->changeJsonScripts();
+        $this->changeJs();
+
         $this->changeImages();
         $this->changeDocumentsLinks();
         $this->changeLinksHtmlHref();
-        $this->changeJs();
-        $this->changeJsonScripts();
         $this->changeInputNames();
+
+        $this->deleteIncludes();
     }
 
     /**
@@ -289,11 +314,13 @@ class HtmlParser
             return;
         }
         $this->changeJsonScripts();
+
         $this->changeImages();
         $this->changeDocumentsLinks();
         $this->changeLinksHtmlHref();
-        $this->deleteIncludes();
         $this->changeInputNames();
+
+        $this->deleteIncludes();
     }
 
     /**
@@ -449,7 +476,12 @@ class HtmlParser
         $links = $this->body->find("a[href*=.html]");
         foreach ($links as $link) {
             $value = $link->getAttribute('href');
-            $value = str_replace(".html", "", $value);
+            if ($value == "index.html") {
+                $value = "/";
+            }
+            else {
+                $value = str_replace(".html", "", $value);
+            }
             $link->getTag()->setAttribute('href', $value);
         }
     }
@@ -479,15 +511,23 @@ class HtmlParser
         // Обходим все js которые есть.
         $scripts = $this->body->find("script[type='text/javascript']");
 
-        // Добавляем фразу что бы потом заменить ее на закрывающий div.
-        $content = new Dom();
-        $content->loadStr("VueJsReplace");
-        $vue = $content->root;
-        if (empty($scripts)) {
-            $this->body->addChild($vue);
-        }
-        else {
-            $this->body->insertBefore($vue, $scripts[0]->id());
+        // Добавляем фразу что бы потом заменить ее на открывающий div.
+        if (! empty($this->body->firstChild())) {
+            $content = new Dom();
+            $content->loadStr("VueJsReplaceBegin");
+            $vue = $content->root;
+            $this->body->insertBefore($vue, $this->body->firstChild()->id());
+
+            // Добавляем фразу что бы потом заменить ее на закрывающий div.
+            $content = new Dom();
+            $content->loadStr("VueJsReplace");
+            $vue = $content->root;
+            if (empty($scripts)) {
+                $this->body->addChild($vue);
+            }
+            else {
+                $this->body->insertBefore($vue, $scripts[0]->id());
+            }
         }
 
         // Js по умолчанию.
@@ -654,7 +694,7 @@ class HtmlParser
         if (empty($classes['value'])) {
             return;
         }
-        $this->intercectClasses($dropClasses['cover'], $classes['value']);
+        $this->intersectClasses($dropClasses['cover'], $classes['value']);
         $children = $item->find("*");
         foreach ($children as $child) {
             $tag = $child->getTag();
@@ -663,11 +703,11 @@ class HtmlParser
                 continue;
             }
             if ($tag->name() == 'div') {
-                $this->intercectClasses($dropClasses['button'], $classes['value']);
+                $this->intersectClasses($dropClasses['button'], $classes['value']);
                 // TODO: icon, text.
             }
             elseif ($tag->name() == 'nav') {
-                $this->intercectClasses($dropClasses['nav'], $classes['value']);
+                $this->intersectClasses($dropClasses['nav'], $classes['value']);
                 $linkClasses = [];
                 foreach ($child->find("*") as $item) {
                     $childTag = $item->getTag();
@@ -676,7 +716,7 @@ class HtmlParser
                     }
                 }
                 $linkClasses = implode(" ", $linkClasses);
-                $this->intercectClasses($dropClasses['navLink'], $linkClasses);
+                $this->intersectClasses($dropClasses['navLink'], $linkClasses);
             }
         }
     }
@@ -687,7 +727,7 @@ class HtmlParser
      * @param $array
      * @param $str
      */
-    private function intercectClasses(&$array, $str)
+    private function intersectClasses(&$array, $str)
     {
         $exploded = explode(" ", $str);
         if (empty($array)) {
