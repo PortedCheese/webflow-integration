@@ -179,8 +179,8 @@ class HtmlParser
     private function fixQuot(&$html)
     {
         $html = str_replace(
-            ["&quot;", "&#x27;"],
-            ["\"", "'"],
+            ["&quot;", "&#x27;", "&gt;"],
+            ["\"", "'", ">"],
             $html
         );
     }
