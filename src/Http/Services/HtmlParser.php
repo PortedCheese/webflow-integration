@@ -176,6 +176,11 @@ class HtmlParser
         }
     }
 
+    /**
+     * Перезаписать кавычки.
+     *
+     * @param $html
+     */
     private function fixQuot(&$html)
     {
         $html = str_replace(
