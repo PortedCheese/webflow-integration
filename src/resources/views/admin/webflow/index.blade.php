@@ -12,7 +12,13 @@
                       method="post">
                     @csrf
 
+
                     <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <button type="submit" class="btn btn-success">
+                                Загрузить
+                            </button>
+                        </div>
                         <div class="custom-file">
                             <input type="file"
                                    class="custom-file-input{{ $errors->has('file') ? ' is-invalid' : '' }}"
@@ -29,11 +35,6 @@
                                     <strong>{{ $errors->first('file') }}</strong>
                                 </div>
                             @endif
-                        </div>
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-success">
-                                Загрузить
-                            </button>
                         </div>
                     </div>
                 </form>

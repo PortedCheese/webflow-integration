@@ -161,16 +161,16 @@ class HtmlParser
             // Убрать iframe, потому что тег может быть в json,
             // и парсер воспринимает это как отдельный тэг, а не часть строки.
             $html = str_replace(
-                ['<iframe class=', "></iframe>"],
-                ["replaceFrame", "replaceCloseFrame"],
+                ['<iframe class=', "<iframe src=", "></iframe>"],
+                ["replaceFrame", "replaceSrcFrame", "replaceCloseFrame"],
                 $html
             );
         }
         else {
             // Вернуть iframe.
             $html = str_replace(
-                ["replaceFrame", "replaceCloseFrame"],
-                ['<iframe class=', "></iframe>"],
+                ["replaceFrame", "replaceSrcFrame", "replaceCloseFrame"],
+                ['<iframe class=', "<iframe src=", "></iframe>"],
                 $html
             );
         }

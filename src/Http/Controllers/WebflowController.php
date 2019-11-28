@@ -59,8 +59,8 @@ class WebflowController extends Controller
             'push' => "@push('more-js')@endpush",
             'contactMap' => "@includeIf('contact-page::site.map', ['size' => 400, 'zoom' => 14, 'preset' => 'islands#blueIcon'])",
             'formFile' => "@includeIf('webflow-integration::layouts.file-input', ['name' => 'file'])",
-            'hiddenCaptcha' => "@hCaptcha @endhCaptcha",
-            'googleCaptcha' => "@gCaptcha @endgCaptcha",
+            'hiddenCaptcha' => "@hiddenCaptcha (старый вариант: @hCaptcha @endhCaptcha)",
+            'googleCaptcha' => "@googleCaptcha2 (старый вариант: @gCaptcha @endgCaptcha)",
         ]);
     }
 
