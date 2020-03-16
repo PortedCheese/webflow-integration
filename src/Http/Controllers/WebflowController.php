@@ -3,13 +3,9 @@
 namespace PortedCheese\WebflowIntegration\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Log;
+use App\Meta;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
-use PHPHtmlParser\Dom;
-use PortedCheese\SeoIntegration\Models\Meta;
 use PortedCheese\WebflowIntegration\Http\Requests\WebflowLoadRequest;
 use PortedCheese\WebflowIntegration\Http\Services\FileManager;
 use PortedCheese\WebflowIntegration\Models\WebflowPage;

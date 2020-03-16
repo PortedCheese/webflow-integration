@@ -2,9 +2,9 @@
 
 namespace PortedCheese\WebflowIntegration\Models;
 
+use App\Meta;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
-use PortedCheese\SeoIntegration\Models\Meta;
 use PortedCheese\WebflowIntegration\Http\Services\FileManager;
 
 class WebflowPage extends Model
