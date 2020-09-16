@@ -13,10 +13,10 @@
     "require": {
         "paquettg/php-html-parser": "^2.0",
         "zanysoft/laravel-zip": "^1.0",
-        "portedcheese/base-settings": "^v1.2",
-        "portedcheese/seo-integration": "^v1.0",
-        "portedcheese/ajax-forms": "^v1.1",
-        "portedcheese/contact-page": "^v1.0"
+        "portedcheese/base-settings": "^v2.0",
+        "portedcheese/seo-integration": "^v1.3",
+        "portedcheese/ajax-forms": "^v1.4",
+        "portedcheese/contact-page": "^v1.3"
     },
     "autoload": {
         "psr-4": {
